@@ -1,0 +1,75 @@
+plugins {
+    id "com.github.johnrengelman.shadow" version "5.2.0"
+    id "application"
+    id "org.jetbrains.kotlin.jvm" version "${kotlinVersion}"
+}
+
+
+mainClassName = 'ru.schemator.Application'
+version "0.1"
+group "ru.schemator"
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    developmentOnly 
+}
+
+dependencies {
+
+    // kotlin
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${kotlinVersion}"
+    implementation "org.jetbrains.kotlin:kotlin-reflect:${kotlinVersion}"
+
+    testImplementation "org.junit.jupiter:junit-jupiter-api:5.3.1"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.3.1"
+    testImplementation "io.mockk:mockk:1.10.0"
+
+}
+
+test.classpath += configurations.developmentOnly
+
+
+ext {
+
+}
+
+sourceSets {
+    main.java.srcDirs += 'src/main/java'
+    main.kotlin.srcDirs += 'src/main/kotlin'
+    main.resources.srcDirs += 'src/main/resources'
+}
+
+shadowJar {
+    mergeServiceFiles()
+}
+
+tasks.withType(JavaExec) {
+    classpath += configurations.developmentOnly
+    jvmArgs('-noverify', '-XX:TieredStopAtLevel=1', '-Dcom.sun.management.jmxremote')
+}
+
+test {
+    useJUnitPlatform()
+}
+
+compileJava {
+    options.encoding = 'UTF-8'
+}
+
+compileKotlin {
+	kotlinOptions {
+	    jvmTarget = '11'
+	    //Will retain parameter names for Java reflection
+	    javaParameters = true 
+	}
+}
+
+compileTestKotlin {
+	kotlinOptions {
+	    jvmTarget = '11'
+	    javaParameters = true 
+	}
+}
