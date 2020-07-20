@@ -19,8 +19,12 @@ class MetadataReaderKotlin(private val schema: JsonSchemaMetadataOutput) : Langu
     //
 
     fun toKotlinClass(generatableClass: GeneratableClass): String {
+        val commentOnTop = if (generatableClass.description != null) """
+/**
+ * ${generatableClass.description}
+ */""" + "\n" else ""
         return generatableClass.properties.joinToString(
-                prefix = "data class ${generatableClass.className.capitalize()}(\n",
+                prefix = "${commentOnTop}data class ${generatableClass.className.capitalize()}(\n",
 
                 transform = { toKotlinProperty(it) },
                 separator = ",\n\n",
@@ -34,6 +38,7 @@ class MetadataReaderKotlin(private val schema: JsonSchemaMetadataOutput) : Langu
     //
     //
 
+    // TODO: Fix indent in some other way instead of hardcoding it
     fun toKotlinProperty(property: GeneratableProperty): String {
         if (property.comment.isNullOrBlank()) {
             return "    val ${property.propertyName.decapitalize()}: ${dataTypeToKotlin(property.propertyDataType)}${mbNullable(property.isNullable)}"
@@ -53,7 +58,8 @@ class MetadataReaderKotlin(private val schema: JsonSchemaMetadataOutput) : Langu
             DataTypes.double -> "Double"
             DataTypes.integer -> "Int"
             DataTypes.string -> "String"
-            DataTypes.obj -> ""
+            DataTypes.obj -> ""   // TODO: what to do with objects?
+            DataTypes.array -> "" // TODO: what to do with arrays?
         }
     }
 

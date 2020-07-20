@@ -4,8 +4,8 @@ import TinyLogger
 import ru.schemator.readers.MetadataReaderGo
 import ru.schemator.readers.MetadataReaderKotlin
 
-fun main(args: Array<String>) {
 
+fun main(args: Array<String>) {
 
     val parsedArgs = parseArgs(args)
     val logger = TinyLogger("[SCHEMATOR_MAIN]", parsedArgs.debug)
@@ -18,6 +18,7 @@ fun main(args: Array<String>) {
         {
           "title": "Person",
           "type": "object",
+          "description": "The best person",
           "properties": {
             "firstName": {
               "type": "string",
@@ -39,13 +40,12 @@ fun main(args: Array<String>) {
     logger.debug("input schema:\n $schema")
     val jsonSchemaMetadataOutput = MetadataReader(schema, parsedArgs).readSchema()
 
-    when (parsedArgs.language) {
+    val resultClass = when (parsedArgs.language) {
         Languages.kotlin -> MetadataReaderKotlin(jsonSchemaMetadataOutput).toClasses()
         Languages.go -> MetadataReaderGo(jsonSchemaMetadataOutput).toClasses()
     }
 
-
-    println("")
+    println("result:\n $resultClass")
 }
 
 
@@ -70,6 +70,12 @@ data class LaunchArguments(
 
 /** Parse command line parameters */
 fun parseArgs(args: Array<String>): LaunchArguments {
-    TODO("")
+    // TODO: Fix parsing
+    return LaunchArguments(
+            language = Languages.kotlin,
+            debug = true,
+            input = "a",
+            output = "b"
+    )
 }
 
