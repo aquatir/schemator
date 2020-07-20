@@ -33,7 +33,8 @@ fun main(args: Array<String>) {
               "type": "integer",
               "minimum": 0
             }
-          }
+          },
+          "required": ["lastName", "age"]
         }
     """.trimIndent()
 
