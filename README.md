@@ -50,6 +50,13 @@ data class Person(
 )
 ```
 
+#### Basic approach
+
+1. Parse json schema as json as a whole.
+2. Create metadata from schema which can be used to generate classes/objects/structures in any language (done in `MetadataReader.kt`)
+3. Call on of MetadataReaders to generate classes (e.g. `MetadataReaderKotlin.kt`)
+
+TODO: explain how stuff works in more details 
 
 #### TODOs:
 
@@ -57,7 +64,7 @@ data class Person(
     - add recursive object read
     - add arrays handling
     - add `$ref` handling
-    - graceful exception handling for wrong schema names/types/etc 
+    - graceful exception handling for wrong schema names/types/etc
 - parse program command line parameters on startup
 - logging, especial exceptional logging 
 - remember specific types while parsing metadata which require `import` headers for generated classes
@@ -65,5 +72,5 @@ data class Person(
 - handle 'object' type in metadata reader
 
 Long plans: 
-- generify to support other languages
-- generify some more to support other schema tools 
+- generify to support adding other languages apart from kotlin
+- handle all json schema syntax. Generate appropriate json library annotations when possible and warn if not possible.
