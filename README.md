@@ -61,16 +61,21 @@ TODO: explain how stuff works in more details
 #### TODOs:
 
 - schema into metadata parser:
-    - add recursive object read
     - add arrays handling
     - add `$ref` handling
     - graceful exception handling for wrong schema names/types/etc
+- metadata into classes:
+    - do NOT write same class name twice if defined in schema twice (aka part of schema validation)
 - parse program command line parameters on startup
 - logging, especial exceptional logging 
 - remember specific types while parsing metadata which require `import` headers for generated classes
 - add support for Json libraries annotations
-- handle 'object' type in metadata reader
+- make testing more intuitive. E.g. maybe try class-loading created class to make sure it is correct for kotlin
+- create conscious documentation for usage
+- add javadocs everywhere
+- create contribution guide
+
 
 Long plans: 
-- generify to support adding other languages apart from kotlin
+- generify to make adding other languages apart from kotlin much easier.
 - handle all json schema syntax. Generate appropriate json library annotations when possible and warn if not possible.

@@ -2,10 +2,8 @@ package ru.schemator
 
 import NotActionableSchemaException
 import NotJsonSchemaException
-import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
-import com.google.gson.JsonPrimitive
 import java.io.StringReader
 
 enum class DataTypes {
@@ -39,24 +37,22 @@ class JsonSchemaMetadataOutput(
 class MetadataReader(val jsonSchema: String, val launchArguments: LaunchArguments) {
     fun readSchema(): JsonSchemaMetadataOutput {
 
+        // Read root object parameters
         val jsonElement = JsonParser.parseReader(StringReader(jsonSchema))
         if (!jsonElement.isJsonObject) {
             throw NotJsonSchemaException("Schema file is not json object -> can not be json schema")
         }
-
-
-        //
-        // READING ROOT OBJECT
-        //
 
         val obj = jsonElement.asJsonObject
         if (obj.getAsJsonPrimitive(Schema.type).asString != SchemaTypes.obj) {
             TODO("Not implemented yet. Generating non-objects requires special handling for different json libs to parse correctly")
         }
 
-        // TODO: Make recursive parsing
-        // non-recursive... parse until... what? Until no objects available in getPropertiesFromObject?
-        val classes = listOfClasses(obj, if (obj.has(Schema.title)) obj.getAsJsonPrimitive(Schema.title).asString else "RootObject")
+        // Recursively generate properties
+        val classes = listOfClasses(
+                obj = obj,
+                rootName = if (obj.has(Schema.title)) obj.getAsJsonPrimitive(Schema.title).asString else "RootObject"
+        )
 
         return JsonSchemaMetadataOutput(
                 entries = classes
@@ -69,7 +65,7 @@ class MetadataReader(val jsonSchema: String, val launchArguments: LaunchArgument
         val rootRequired = getRequired(obj)
 
         val (primitives, arrays, objects) = splitObjectTypesByHandling(obj)
-        val primitiveProps = primitives
+        val props = (primitives + objects)
                 .map {
                     val title = it.first
                     val value = it.second.asJsonObject
@@ -80,38 +76,22 @@ class MetadataReader(val jsonSchema: String, val launchArguments: LaunchArgument
                             propertyName = title,
                             propertyDataType = SchemaTypes.toMetadataType(type),
                             isNullable = !rootRequired.contains(it.first),
-                            comment = innerDescription
-                    )
-                }
-
-        val objectProps = objects
-                .map {
-                    val title = it.first
-                    val value = it.second.asJsonObject
-                    val innerDescription = getTitle(value)
-
-                    GeneratableProperty(
-                            propertyName = title,
-                            propertyDataType = SchemaTypes.toMetadataType(SchemaTypes.obj),
-                            objectTypeName = title.capitalize(),
-                            isNullable = !rootRequired.contains(it.first),
-                            comment = innerDescription
+                            comment = innerDescription,
+                            objectTypeName = if (type == SchemaTypes.obj) title.capitalize() else null
                     )
                 }
 
         // TODO: handle arrays... here
 
-        // compose generated classes
+        // A head of this recursion is generated here
         val classFromRoot = GeneratableClass(
                 className = rootName,
                 description = rootDescription,
-                properties = primitiveProps + objectProps
+                properties = props
         )
 
-        val classesFromInnerObjects = objects
-                .flatMap { listOfClasses(it.second, it.first.capitalize()) }
-
-        return classesFromInnerObjects + classFromRoot
+        // TODO: Tail recursion.
+        return objects.flatMap { listOfClasses(it.second, it.first.capitalize()) } + classFromRoot
     }
 
 
