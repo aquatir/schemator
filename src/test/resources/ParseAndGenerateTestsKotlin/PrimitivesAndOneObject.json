@@ -1,0 +1,33 @@
+{
+  "title": "Person",
+  "type": "object",
+  "description": "The best person",
+  "properties": {
+    "firstName": {
+      "type": "string",
+      "description": "The person's first name."
+    },
+    "lastName": {
+      "type": "string",
+      "description": "The person's last name."
+    },
+    "age": {
+      "description": "Age in years which must be equal to or greater than zero.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "work": {
+      "type": "object",
+      "properties": {
+        "place": {
+          "type": "string"
+        },
+        "starttime": {
+          "type": "string"
+        }
+      },
+      "required": ["place"]
+    }
+  },
+  "required": ["lastName", "age", "work"]
+}

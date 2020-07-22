@@ -4,11 +4,12 @@ import ru.schemator.DataTypes
 import ru.schemator.GeneratableClass
 import ru.schemator.GeneratableProperty
 import ru.schemator.JsonSchemaMetadataOutput
+import java.lang.StringBuilder
 
 /** Read jsonSchema, parse and return kotlin code */
 class MetadataReaderKotlin(private val schema: JsonSchemaMetadataOutput) : LanguageSchemaReader(schema) {
     override fun toClasses(): String {
-        return schema.entries.joinToString(separator = "\n\n") { toKotlinClass(it) }
+        return schema.entries.joinToString(separator = "\n") { toKotlinClass(it) }
     }
 
     //
@@ -25,9 +26,8 @@ class MetadataReaderKotlin(private val schema: JsonSchemaMetadataOutput) : Langu
  */""" + "\n" else ""
         return generatableClass.properties.joinToString(
                 prefix = "${commentOnTop}data class ${generatableClass.className.capitalize()}(\n",
-
                 transform = { toKotlinProperty(it) },
-                separator = ",\n\n",
+                separator = ",\n",
                 postfix = "\n)")
     }
 
@@ -40,25 +40,22 @@ class MetadataReaderKotlin(private val schema: JsonSchemaMetadataOutput) : Langu
 
     // TODO: Fix indent in some other way instead of hardcoding it
     fun toKotlinProperty(property: GeneratableProperty): String {
-        if (property.comment.isNullOrBlank()) {
-            return "    val ${property.propertyName.decapitalize()}: ${dataTypeToKotlin(property.propertyDataType)}${mbNullable(property.isNullable)}"
-        } else {
-            return """
-            /** ${property.comment} */
-            val ${property.propertyName.decapitalize()}: ${dataTypeToKotlin(property.propertyDataType)}${mbNullable(property.isNullable)}
-    """.replaceIndent("    ")
-
+        val strBuilder = StringBuilder()
+        if (!property.comment.isNullOrBlank()) {
+            strBuilder.append("        /** ${property.comment} */\n")
         }
+        strBuilder.append("        val ${property.propertyName.decapitalize()}: ${dataTypeToKotlin(property)}${mbNullable(property.isNullable)}")
+        return strBuilder.toString()
     }
 
-    fun dataTypeToKotlin(dataTypes: DataTypes): String {
-        return when (dataTypes) {
+    fun dataTypeToKotlin(property: GeneratableProperty): String {
+        return when (property.propertyDataType) {
             DataTypes.date -> "LocalDate"
             DataTypes.datetime -> "LocalDateTime"
             DataTypes.double -> "Double"
             DataTypes.integer -> "Int"
             DataTypes.string -> "String"
-            DataTypes.obj -> ""   // TODO: what to do with objects?
+            DataTypes.obj -> property.objectTypeName!!   // always available for type = objects
             DataTypes.array -> "" // TODO: what to do with arrays?
         }
     }

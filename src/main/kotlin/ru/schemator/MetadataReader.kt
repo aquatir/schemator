@@ -2,8 +2,10 @@ package ru.schemator
 
 import NotActionableSchemaException
 import NotJsonSchemaException
+import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import com.google.gson.JsonPrimitive
 import java.io.StringReader
 
 enum class DataTypes {
@@ -21,8 +23,12 @@ class GeneratableProperty(
         val propertyName: String,
         val propertyDataType: DataTypes,
         val isNullable: Boolean,
+        val objectTypeName: String? = null, // Only available for objects and arrays of objects
         val comment: String? = ""
-)
+) {
+    fun isObj() = propertyDataType == DataTypes.obj
+    fun isArray() = propertyDataType == DataTypes.array
+}
 
 // metadata is a list of generatable classes
 class JsonSchemaMetadataOutput(
@@ -38,41 +44,103 @@ class MetadataReader(val jsonSchema: String, val launchArguments: LaunchArgument
             throw NotJsonSchemaException("Schema file is not json object -> can not be json schema")
         }
 
-        val obj = jsonElement.asJsonObject
 
+        //
+        // READING ROOT OBJECT
+        //
+
+        val obj = jsonElement.asJsonObject
         if (obj.getAsJsonPrimitive(Schema.type).asString != SchemaTypes.obj) {
             TODO("Not implemented yet. Generating non-objects requires special handling for different json libs to parse correctly")
         }
 
-        // Recursive loop should start here
-        val objName = if (obj.has(Schema.title)) obj.getAsJsonPrimitive(Schema.title).asString else "RootObject"
-        val description: String? = getTitle(obj)
-        val required = getRequired(obj)
-
         // TODO: Make recursive parsing
-        val props = getPropertiesFromObject(obj).entrySet()
+        // non-recursive... parse until... what? Until no objects available in getPropertiesFromObject?
+        val classes = listOfClasses(obj, if (obj.has(Schema.title)) obj.getAsJsonPrimitive(Schema.title).asString else "RootObject")
+
+        return JsonSchemaMetadataOutput(
+                entries = classes
+        )
+    }
+
+    private fun listOfClasses(obj: JsonObject, rootName: String): List<GeneratableClass> {
+
+        val rootDescription: String? = getTitle(obj)
+        val rootRequired = getRequired(obj)
+
+        val (primitives, arrays, objects) = splitObjectTypesByHandling(obj)
+        val primitiveProps = primitives
                 .map {
-                    val title = it.key
-                    val asObj = it.value.asJsonObject
-                    val type = asObj.get(Schema.type).asJsonPrimitive.asString // TODO: safe get
-                    val innerDescription = getTitle(asObj)
+                    val title = it.first
+                    val value = it.second.asJsonObject
+                    val type = value.get(Schema.type).asJsonPrimitive.asString // TODO: safe get
+                    val innerDescription = getTitle(value)
 
                     GeneratableProperty(
                             propertyName = title,
                             propertyDataType = SchemaTypes.toMetadataType(type),
-                            isNullable = !required.contains(it.key),
+                            isNullable = !rootRequired.contains(it.first),
                             comment = innerDescription
                     )
-
                 }
 
-        return JsonSchemaMetadataOutput(
-                entries = listOf(GeneratableClass(
-                        className = objName,
-                        properties = props,
-                        description = description
-                ))
+        val objectProps = objects
+                .map {
+                    val title = it.first
+                    val value = it.second.asJsonObject
+                    val innerDescription = getTitle(value)
+
+                    GeneratableProperty(
+                            propertyName = title,
+                            propertyDataType = SchemaTypes.toMetadataType(SchemaTypes.obj),
+                            objectTypeName = title.capitalize(),
+                            isNullable = !rootRequired.contains(it.first),
+                            comment = innerDescription
+                    )
+                }
+
+        // TODO: handle arrays... here
+
+        // compose generated classes
+        val classFromRoot = GeneratableClass(
+                className = rootName,
+                description = rootDescription,
+                properties = primitiveProps + objectProps
         )
+
+        val classesFromInnerObjects = objects
+                .flatMap { listOfClasses(it.second, it.first.capitalize()) }
+
+        return classesFromInnerObjects + classFromRoot
+    }
+
+
+
+    private fun splitObjectTypesByHandling(obj: JsonObject): Triple<
+            List<Pair<String,JsonObject>>,
+            List<Pair<String,JsonObject>>,
+            List<Pair<String,JsonObject>>
+            >
+    {
+
+        val primitives = mutableListOf<Pair<String,JsonObject>>()
+        val arrays = mutableListOf<Pair<String,JsonObject>>()
+        val objects = mutableListOf<Pair<String, JsonObject>>()
+
+        for (entry in getPropertiesFromObject(obj).entrySet()) {
+            val type = entry.value.asJsonObject.get(Schema.type).asJsonPrimitive.asString
+            val pair = entry.toPair()
+            when(type) {
+                SchemaTypes.obj -> objects.add(Pair(pair.first, pair.second.asJsonObject))
+                SchemaTypes.array -> arrays.add(Pair(pair.first, pair.second.asJsonObject))
+                SchemaTypes.number,
+                SchemaTypes.string,
+                SchemaTypes.integer -> primitives.add(Pair(pair.first, pair.second.asJsonObject))
+                else -> throw NotJsonSchemaException("Type $type is not a valid Json Schema type")
+            }
+        }
+
+        return Triple(primitives, arrays, objects)
     }
 
     private fun getRequired(obj: JsonObject): List<String> {

@@ -32,23 +32,36 @@ fun main(args: Array<String>) {
               "description": "Age in years which must be equal to or greater than zero.",
               "type": "integer",
               "minimum": 0
+            },
+            "work": {
+              "type": "object",
+              "properties": {
+                  "place": {
+                    "type": "string"
+                  },
+                  "starttime": {
+                    "type": "string"
+                  }
+              },
+              "required": ["place"]
             }
           },
-          "required": ["lastName", "age"]
+          "required": ["lastName", "age", "work"]
         }
     """.trimIndent()
 
     logger.debug("input schema:\n $schema")
+
     val jsonSchemaMetadataOutput = MetadataReader(schema, parsedArgs).readSchema()
 
-    val resultClass = when (parsedArgs.language) {
+    val generated = when (parsedArgs.language) {
         Languages.kotlin -> MetadataReaderKotlin(jsonSchemaMetadataOutput).toClasses()
         Languages.go -> MetadataReaderGo(jsonSchemaMetadataOutput).toClasses()
     }
 
-    println("result:\n $resultClass")
+    println("\n==================\n===== result =====\n==================")
+    println(generated)
 }
-
 
 
 enum class Languages {
@@ -58,7 +71,7 @@ enum class Languages {
 data class LaunchArguments(
 
         /** Generated language. Possible values [Languages]*/
-        val language: Languages,
+        val language: Languages = Languages.kotlin,
 
         /** Input schema file to generate */
         val input: String,
