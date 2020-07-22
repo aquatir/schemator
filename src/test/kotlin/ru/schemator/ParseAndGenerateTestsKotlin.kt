@@ -10,6 +10,7 @@ import java.io.File
  *
  */
 class ParseAndGenerateTestsKotlin {
+
     @Test
     fun `given primitives datatypes schema, do generate kotlin, expect generated correctly`() {
 

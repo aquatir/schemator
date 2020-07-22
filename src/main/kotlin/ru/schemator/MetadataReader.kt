@@ -5,6 +5,7 @@ import NotJsonSchemaException
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import java.io.StringReader
+import java.util.*
 
 enum class DataTypes {
     string, integer, double, obj, datetime, date, array
@@ -48,18 +49,51 @@ class MetadataReader(val jsonSchema: String, val launchArguments: LaunchArgument
             TODO("Not implemented yet. Generating non-objects requires special handling for different json libs to parse correctly")
         }
 
-        // Recursively generate properties
-        val classes = listOfClasses(
-                obj = obj,
-                rootName = if (obj.has(Schema.title)) obj.getAsJsonPrimitive(Schema.title).asString else "RootObject"
-        )
-
-        return JsonSchemaMetadataOutput(
-                entries = classes
-        )
+        return JsonSchemaMetadataOutput(generateClasses(obj))
     }
 
-    private fun listOfClasses(obj: JsonObject, rootName: String): List<GeneratableClass> {
+
+
+    data class NameAndObjectPair(val name: String, val obj: JsonObject)
+
+    private fun generateClasses(obj: JsonObject): List<GeneratableClass> {
+
+        val rootName = if (obj.has(Schema.title)) obj.getAsJsonPrimitive(Schema.title).asString else "RootObject"
+        val queue = ArrayDeque<NameAndObjectPair>()
+                .apply { this.offer(NameAndObjectPair(rootName, obj)) }
+
+        /**
+         * Tail recursion to read Json Schema tree
+         * [accum] -> on each step stores current generated classes
+         * [objs] -> on each step stores objects which should be traversed. Works as queue so essentially json schema is traversed with BFS.
+         * On each step new objects may be added here by calling [oneClass]
+         */
+        tailrec fun generateClasses(accum: MutableList<GeneratableClass> = mutableListOf(), objs: Queue<NameAndObjectPair>): List<GeneratableClass> {
+            return if (objs.isEmpty())
+                accum
+            else {
+                val firstOnQueue = objs.remove()
+                accum.add(
+                        oneClass(
+                                obj = firstOnQueue.obj,
+                                objs = objs,
+                                rootName = firstOnQueue.name
+                        )
+                )
+
+                return generateClasses(accum, objs)
+            }
+        }
+
+        val accum = mutableListOf<GeneratableClass>()
+        return generateClasses(accum, queue)
+    }
+
+
+    /**
+     * Generate a single class from this [JsonObject] only. Apply any children objects into [objs]. Return generated class
+     */
+    private fun oneClass(obj: JsonObject, objs: Queue<NameAndObjectPair>, rootName: String): GeneratableClass {
 
         val rootDescription: String? = getTitle(obj)
         val rootRequired = getRequired(obj)
@@ -84,33 +118,33 @@ class MetadataReader(val jsonSchema: String, val launchArguments: LaunchArgument
         // TODO: handle arrays... here
 
         // A head of this recursion is generated here
-        val classFromRoot = GeneratableClass(
+
+        objects.forEach {
+            objs.add(NameAndObjectPair(it.first.capitalize(), it.second))
+        }
+
+        return GeneratableClass(
                 className = rootName,
                 description = rootDescription,
                 properties = props
         )
-
-        // TODO: Tail recursion.
-        return objects.flatMap { listOfClasses(it.second, it.first.capitalize()) } + classFromRoot
     }
 
 
-
     private fun splitObjectTypesByHandling(obj: JsonObject): Triple<
-            List<Pair<String,JsonObject>>,
-            List<Pair<String,JsonObject>>,
-            List<Pair<String,JsonObject>>
-            >
-    {
+            List<Pair<String, JsonObject>>,
+            List<Pair<String, JsonObject>>,
+            List<Pair<String, JsonObject>>
+            > {
 
-        val primitives = mutableListOf<Pair<String,JsonObject>>()
-        val arrays = mutableListOf<Pair<String,JsonObject>>()
+        val primitives = mutableListOf<Pair<String, JsonObject>>()
+        val arrays = mutableListOf<Pair<String, JsonObject>>()
         val objects = mutableListOf<Pair<String, JsonObject>>()
 
         for (entry in getPropertiesFromObject(obj).entrySet()) {
             val type = entry.value.asJsonObject.get(Schema.type).asJsonPrimitive.asString
             val pair = entry.toPair()
-            when(type) {
+            when (type) {
                 SchemaTypes.obj -> objects.add(Pair(pair.first, pair.second.asJsonObject))
                 SchemaTypes.array -> arrays.add(Pair(pair.first, pair.second.asJsonObject))
                 SchemaTypes.number,

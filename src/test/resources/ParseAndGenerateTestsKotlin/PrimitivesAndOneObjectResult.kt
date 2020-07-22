@@ -1,8 +1,3 @@
-data class Work(
-        val place: String,
-        val starttime: String?
-)
-
 /**
  * The best person
  */
@@ -15,4 +10,7 @@ data class Person(
         val age: Int,
         val work: Work
 )
-
+data class Work(
+        val place: String,
+        val starttime: String?
+)
