@@ -18,6 +18,7 @@ class GeneratableClassMetadata(
         val description: String? = null
 )
 
+// TODO: Split using sealed classes
 class GeneratablePropertyMetadata(
         val propertyName: String,
         val propertyDataType: DataTypes,
@@ -45,7 +46,7 @@ class MetadataReader(val jsonSchema: String, val launchArguments: LaunchArgument
         }
 
         val obj = jsonElement.asJsonObject
-        if (obj.getAsJsonPrimitive(Schema.type).asString != SchemaTypes.obj) {
+        if (obj.type() != SchemaTypes.obj) {
             TODO("Not implemented yet. Generating non-objects requires special handling for different json libs to parse correctly")
         }
 
@@ -57,7 +58,7 @@ class MetadataReader(val jsonSchema: String, val launchArguments: LaunchArgument
 
     private fun generateClasses(obj: JsonObject): List<GeneratableClassMetadata> {
 
-        val rootName = if (obj.has(Schema.title)) obj.getAsJsonPrimitive(Schema.title).asString else "RootObject"
+        val rootName = obj.titleNullable() ?: "RootObject"
         val queue = ArrayDeque<NameAndObjectPair>()
                 .apply { this.offer(NameAndObjectPair(rootName, obj)) }
 
@@ -93,7 +94,7 @@ class MetadataReader(val jsonSchema: String, val launchArguments: LaunchArgument
      */
     private fun oneClass(obj: JsonObject, objs: Queue<NameAndObjectPair>, rootName: String): GeneratableClassMetadata {
 
-        val rootDescription: String? = getDescription(obj)
+        val rootDescription: String? = obj.descriptionNullable()
         val rootRequired = getRequired(obj)
 
         val (primitives, arrays, objects) = splitObjectTypesByHandling(obj)
@@ -101,8 +102,8 @@ class MetadataReader(val jsonSchema: String, val launchArguments: LaunchArgument
                 .map {
                     val title = it.first
                     val value = it.second.asJsonObject
-                    val type = value.get(Schema.type).asPrimitiveString() // TODO: safe get
-                    val innerDescription = getDescription(value)
+                    val type = value.type()
+                    val innerDescription = value.descriptionNullable()
 
                     // Objects should be added into recursion
                     if (type == SchemaTypes.obj) {
@@ -119,28 +120,23 @@ class MetadataReader(val jsonSchema: String, val launchArguments: LaunchArgument
                 }
 
         // Array support :
-        // TODO: Support for 'contains' keyword
+        // TODO: Support for 'contains' keyword (schema #6)
         // TODO: Support for arrays inside other arrays
         val arrayProps = arrays
                 .map {
                     val title = it.first
                     val value = it.second.asJsonObject
-                    val innerDescription = getDescription(value)
+                    val innerDescription = value.descriptionNullable()
 
-                    val items = value.get(Schema.items).asJsonObject // TODO: Will fail for 'contains' for json schema 6
-                    val typeOfItems = items.get(Schema.type).asPrimitiveString()
+                    val items = value.items() // TODO: Will fail for 'contains' for json schema 6
+                    val typeOfItems = items.type()
 
                     // TODO: Support array inside array
                     val arrayTypeName =
                             if (SchemaTypes.isPrimitive(typeOfItems)) {
                                 typeOfItems.capitalize()
                             } else {
-                                val innerArrayObjectTitle = items.get(Schema.title)
-                                val innerObjectTitle = if (innerArrayObjectTitle != null) {
-                                    innerArrayObjectTitle.asPrimitiveString().capitalize()
-                                } else {
-                                    "${title}Item".capitalize()
-                                }
+                                val innerObjectTitle = (items.titleNullable() ?: "${title}Item").capitalize()
 
                                 // Internal array objects should be added into recursion
                                 objs.add(NameAndObjectPair(innerObjectTitle, items))
@@ -177,7 +173,7 @@ class MetadataReader(val jsonSchema: String, val launchArguments: LaunchArgument
         val objects = mutableListOf<Pair<String, JsonObject>>()
 
         for (entry in getPropertiesFromObject(obj).entrySet()) {
-            val type = entry.value.asJsonObject.get(Schema.type).asJsonPrimitive.asString
+            val type = entry.value.asJsonObject.type()
             val pair = entry.toPair()
             when (type) {
                 SchemaTypes.obj -> objects.add(Pair(pair.first, pair.second.asJsonObject))
@@ -193,8 +189,8 @@ class MetadataReader(val jsonSchema: String, val launchArguments: LaunchArgument
     }
 
     private fun getRequired(obj: JsonObject): List<String> {
-        return if (obj.has(Schema.required)) {
-            val required = obj.get(Schema.required)
+        val required = obj.requiredNullable()
+        return if (required != null) {
             if (!required.isJsonArray) {
                 throw NotJsonSchemaException("'required' field MUST be json array")
             } else {
@@ -208,7 +204,7 @@ class MetadataReader(val jsonSchema: String, val launchArguments: LaunchArgument
     }
 
     private fun getPropertiesFromObject(obj: JsonObject): JsonObject {
-        val properties = obj.get(Schema.properties)
+        val properties = obj.properties()
         if (!properties.isJsonObject) {
             throw NotJsonSchemaException("'properties' field MUST bu json object")
         } else {
@@ -220,10 +216,5 @@ class MetadataReader(val jsonSchema: String, val launchArguments: LaunchArgument
             }
         }
     }
-
-    private fun getDescription(obj: JsonObject): String? {
-        return if (obj.has(Schema.description)) obj.getAsJsonPrimitive(Schema.description).asString else null
-    }
-
 }
 

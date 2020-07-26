@@ -4,7 +4,37 @@
 
 Your ultimate tool for generating code from json schemas. 
 
-Supported languages: **None!** But working on Kotlin support. Can generate from primitive schemas with no nesting for now. 
+Supported languages: Limited Kotlin support.
+
+Supported functionality:
+- Schemas with primitives, objects and arrays. No array nesting. 
+
+#### TODOs:
+
+- schema into metadata parser:
+    - add `$ref` handling
+    - put arrays in the same place in generated classes as where they were in parsed schema
+    - support enums
+    - array type inside another array
+    - graceful exception handling for wrong schema names/types/etc
+- metadata into classes:
+    - validate schema before work
+- quality of codebase:
+    - metadata for properties should be sealed classes
+- parse program command line parameters on startup
+- logging, especial exceptional logging 
+- remember specific types while parsing metadata which require `import` headers for generated classes
+- add support for Json libraries annotations
+- make testing more intuitive. E.g. maybe try class-loading created class to make sure it is correct for kotlin
+- create conscious documentation for usage
+- add javadocs everywhere
+- create contribution guide
+
+
+Long plans: 
+- generify to make adding other languages apart from kotlin much easier.
+- handle all json schema syntax. Generate appropriate json library annotations when possible and warn if not possible.
+
 
 #### Example
 
@@ -57,26 +87,3 @@ data class Person(
 3. Call on of MetadataReaders to generate classes (e.g. `MetadataReaderKotlin.kt`)
 
 TODO: explain how stuff works in more details 
-
-#### TODOs:
-
-- schema into metadata parser:
-    - add `$ref` handling
-    - support enums
-    - array type inside another array
-    - graceful exception handling for wrong schema names/types/etc
-- metadata into classes:
-    - validate schema before work
-- parse program command line parameters on startup
-- logging, especial exceptional logging 
-- remember specific types while parsing metadata which require `import` headers for generated classes
-- add support for Json libraries annotations
-- make testing more intuitive. E.g. maybe try class-loading created class to make sure it is correct for kotlin
-- create conscious documentation for usage
-- add javadocs everywhere
-- create contribution guide
-
-
-Long plans: 
-- generify to make adding other languages apart from kotlin much easier.
-- handle all json schema syntax. Generate appropriate json library annotations when possible and warn if not possible.
