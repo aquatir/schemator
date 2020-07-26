@@ -61,11 +61,12 @@ TODO: explain how stuff works in more details
 #### TODOs:
 
 - schema into metadata parser:
-    - add arrays handling
     - add `$ref` handling
+    - support enums
+    - array type inside another array
     - graceful exception handling for wrong schema names/types/etc
 - metadata into classes:
-    - do NOT write same class name twice if defined in schema twice (aka part of schema validation)
+    - validate schema before work
 - parse program command line parameters on startup
 - logging, especial exceptional logging 
 - remember specific types while parsing metadata which require `import` headers for generated classes

@@ -20,33 +20,33 @@ fun main(args: Array<String>) {
           "type": "object",
           "description": "The best person",
           "properties": {
-            "firstName": {
-              "type": "string",
-              "description": "The person's first name."
-            },
-            "lastName": {
-              "type": "string",
-              "description": "The person's last name."
-            },
-            "age": {
-              "description": "Age in years which must be equal to or greater than zero.",
-              "type": "integer",
-              "minimum": 0
-            },
             "work": {
               "type": "object",
               "properties": {
-                  "place": {
-                    "type": "string"
+                  "stuff": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
                   },
-                  "starttime": {
-                    "type": "string"
+                  "stuffArray": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                         "top": {
+                           "type": "string"
+                         },
+                         "test": {
+                           "type": "integer"
+                         }
+                       }
+                    }
                   }
               },
               "required": ["place"]
             }
-          },
-          "required": ["lastName", "age", "work"]
+          }
         }
     """.trimIndent()
 
@@ -60,7 +60,7 @@ fun main(args: Array<String>) {
     }
 
     println("\n==================\n===== result =====\n==================")
-    println(generated)
+    println(generated.joinToString("\n"))
 }
 
 

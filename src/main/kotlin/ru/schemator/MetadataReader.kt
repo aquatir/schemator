@@ -12,17 +12,17 @@ enum class DataTypes {
 }
 
 /** Can also generate  */
-class GeneratableClass(
+class GeneratableClassMetadata(
         val className: String,
-        val properties: List<GeneratableProperty>,
+        val propertyMetadata: List<GeneratablePropertyMetadata>,
         val description: String? = null
 )
 
-class GeneratableProperty(
+class GeneratablePropertyMetadata(
         val propertyName: String,
         val propertyDataType: DataTypes,
         val isNullable: Boolean,
-        val objectTypeName: String? = null, // Only available for objects and arrays of objects
+        val objectTypeName: String? = null, // Only available for objects and arrays of objects. For objects -> Name of type. For Array -> type inside array
         val comment: String? = ""
 ) {
     fun isObj() = propertyDataType == DataTypes.obj
@@ -31,7 +31,7 @@ class GeneratableProperty(
 
 // metadata is a list of generatable classes
 class JsonSchemaMetadataOutput(
-        val entries: List<GeneratableClass>
+        val entries: List<GeneratableClassMetadata>
 )
 
 /** Create metedata by parsing json schema which can be used to generate code directly */
@@ -53,10 +53,9 @@ class MetadataReader(val jsonSchema: String, val launchArguments: LaunchArgument
     }
 
 
-
     data class NameAndObjectPair(val name: String, val obj: JsonObject)
 
-    private fun generateClasses(obj: JsonObject): List<GeneratableClass> {
+    private fun generateClasses(obj: JsonObject): List<GeneratableClassMetadata> {
 
         val rootName = if (obj.has(Schema.title)) obj.getAsJsonPrimitive(Schema.title).asString else "RootObject"
         val queue = ArrayDeque<NameAndObjectPair>()
@@ -68,7 +67,7 @@ class MetadataReader(val jsonSchema: String, val launchArguments: LaunchArgument
          * [objs] -> on each step stores objects which should be traversed. Works as queue so essentially json schema is traversed with BFS.
          * On each step new objects may be added here by calling [oneClass]
          */
-        tailrec fun generateClasses(accum: MutableList<GeneratableClass> = mutableListOf(), objs: Queue<NameAndObjectPair>): List<GeneratableClass> {
+        tailrec fun generateClasses(accum: MutableList<GeneratableClassMetadata> = mutableListOf(), objs: Queue<NameAndObjectPair>): List<GeneratableClassMetadata> {
             return if (objs.isEmpty())
                 accum
             else {
@@ -85,17 +84,16 @@ class MetadataReader(val jsonSchema: String, val launchArguments: LaunchArgument
             }
         }
 
-        val accum = mutableListOf<GeneratableClass>()
-        return generateClasses(accum, queue)
+        return generateClasses(mutableListOf(), queue)
     }
 
 
     /**
      * Generate a single class from this [JsonObject] only. Apply any children objects into [objs]. Return generated class
      */
-    private fun oneClass(obj: JsonObject, objs: Queue<NameAndObjectPair>, rootName: String): GeneratableClass {
+    private fun oneClass(obj: JsonObject, objs: Queue<NameAndObjectPair>, rootName: String): GeneratableClassMetadata {
 
-        val rootDescription: String? = getTitle(obj)
+        val rootDescription: String? = getDescription(obj)
         val rootRequired = getRequired(obj)
 
         val (primitives, arrays, objects) = splitObjectTypesByHandling(obj)
@@ -103,10 +101,15 @@ class MetadataReader(val jsonSchema: String, val launchArguments: LaunchArgument
                 .map {
                     val title = it.first
                     val value = it.second.asJsonObject
-                    val type = value.get(Schema.type).asJsonPrimitive.asString // TODO: safe get
-                    val innerDescription = getTitle(value)
+                    val type = value.get(Schema.type).asPrimitiveString() // TODO: safe get
+                    val innerDescription = getDescription(value)
 
-                    GeneratableProperty(
+                    // Objects should be added into recursion
+                    if (type == SchemaTypes.obj) {
+                        objs.add(NameAndObjectPair(it.first.capitalize(), it.second))
+                    }
+
+                    GeneratablePropertyMetadata(
                             propertyName = title,
                             propertyDataType = SchemaTypes.toMetadataType(type),
                             isNullable = !rootRequired.contains(it.first),
@@ -115,18 +118,50 @@ class MetadataReader(val jsonSchema: String, val launchArguments: LaunchArgument
                     )
                 }
 
-        // TODO: handle arrays... here
+        // Array support :
+        // TODO: Support for 'contains' keyword
+        // TODO: Support for arrays inside other arrays
+        val arrayProps = arrays
+                .map {
+                    val title = it.first
+                    val value = it.second.asJsonObject
+                    val innerDescription = getDescription(value)
+
+                    val items = value.get(Schema.items).asJsonObject // TODO: Will fail for 'contains' for json schema 6
+                    val typeOfItems = items.get(Schema.type).asPrimitiveString()
+
+                    // TODO: Support array inside array
+                    val arrayTypeName =
+                            if (SchemaTypes.isPrimitive(typeOfItems)) {
+                                typeOfItems.capitalize()
+                            } else {
+                                val innerArrayObjectTitle = items.get(Schema.title)
+                                val innerObjectTitle = if (innerArrayObjectTitle != null) {
+                                    innerArrayObjectTitle.asPrimitiveString().capitalize()
+                                } else {
+                                    "${title}Item".capitalize()
+                                }
+
+                                // Internal array objects should be added into recursion
+                                objs.add(NameAndObjectPair(innerObjectTitle, items))
+                                innerObjectTitle
+                            }
+
+                    GeneratablePropertyMetadata(
+                            propertyName = title,
+                            propertyDataType = DataTypes.array,
+                            isNullable = !rootRequired.contains(it.first),
+                            comment = innerDescription,
+                            objectTypeName = arrayTypeName
+                    )
+                }
 
         // A head of this recursion is generated here
 
-        objects.forEach {
-            objs.add(NameAndObjectPair(it.first.capitalize(), it.second))
-        }
-
-        return GeneratableClass(
+        return GeneratableClassMetadata(
                 className = rootName,
                 description = rootDescription,
-                properties = props
+                propertyMetadata = props + arrayProps
         )
     }
 
@@ -186,7 +221,7 @@ class MetadataReader(val jsonSchema: String, val launchArguments: LaunchArgument
         }
     }
 
-    private fun getTitle(obj: JsonObject): String? {
+    private fun getDescription(obj: JsonObject): String? {
         return if (obj.has(Schema.description)) obj.getAsJsonPrimitive(Schema.description).asString else null
     }
 

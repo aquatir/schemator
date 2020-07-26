@@ -16,7 +16,6 @@ object Schema {
     const val maxLength = "maxLength"
     const val items = "items"
     const val ref = "\$ref"
-
 }
 
 object SchemaTypes {
@@ -36,4 +35,10 @@ object SchemaTypes {
             else -> TODO()
         }
     }
+
+    /** Check if string is primitive type */
+    fun isPrimitive(type: String) =
+            type == integer
+                    || type == number
+                    || type == string
 }

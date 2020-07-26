@@ -12,10 +12,28 @@ import java.io.File
 class ParseAndGenerateTestsKotlin {
 
     @Test
-    fun `given primitives datatypes schema, do generate kotlin, expect generated correctly`() {
+    fun `given primitives datatypes with one object schema, do generate kotlin, expect generated correctly`() {
 
-        val jsonSchema = File(ClassLoader.getSystemResource("ParseAndGenerateTestsKotlin/PrimitivesAndOneObject.json").file).readText().trim()
-        val expected = File(ClassLoader.getSystemResource("ParseAndGenerateTestsKotlin/PrimitivesAndOneObjectResult.kt").file).readText().trim()
+        schemaReadAndValidateTest(
+                readSchemaFrom = "ParseAndGenerateTestsKotlin/PrimitivesAndOneObject.json",
+                readExpectedClassFrom = "ParseAndGenerateTestsKotlin/PrimitivesAndOneObjectResult.kt"
+        )
+    }
+
+    @Test
+    fun `given arrays of primitive and of object schema, do generate kotlin, expect generated correctly`() {
+
+        schemaReadAndValidateTest(
+                readSchemaFrom = "ParseAndGenerateTestsKotlin/ArraysOfPrimitivesAndObjects.json",
+                readExpectedClassFrom = "ParseAndGenerateTestsKotlin/ArraysOfPrimitivesAndObjectsResult.kt"
+        )
+    }
+
+
+    private fun schemaReadAndValidateTest(readSchemaFrom: String, readExpectedClassFrom: String) {
+
+        val jsonSchema = File(ClassLoader.getSystemResource(readSchemaFrom).file).readText().trim()
+        val expected = File(ClassLoader.getSystemResource(readExpectedClassFrom).file).readText().trim()
 
         val jsonSchemaMetadataOutput = MetadataReader(jsonSchema, LaunchArguments(
                 language = Languages.kotlin,

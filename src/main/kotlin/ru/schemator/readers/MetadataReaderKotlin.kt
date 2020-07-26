@@ -1,8 +1,8 @@
 package ru.schemator.readers
 
 import ru.schemator.DataTypes
-import ru.schemator.GeneratableClass
-import ru.schemator.GeneratableProperty
+import ru.schemator.GeneratableClassMetadata
+import ru.schemator.GeneratablePropertyMetadata
 import ru.schemator.JsonSchemaMetadataOutput
 import java.lang.StringBuilder
 
@@ -19,13 +19,13 @@ class MetadataReaderKotlin(private val schema: JsonSchemaMetadataOutput) : Langu
     //
     //
 
-    fun toKotlinClass(generatableClass: GeneratableClass): String {
-        val commentOnTop = if (generatableClass.description != null) """
+    fun toKotlinClass(generatableClassMetadata: GeneratableClassMetadata): String {
+        val commentOnTop = if (generatableClassMetadata.description != null) """
 /**
- * ${generatableClass.description}
+ * ${generatableClassMetadata.description}
  */""" + "\n" else ""
-        return generatableClass.properties.joinToString(
-                prefix = "${commentOnTop}data class ${generatableClass.className.capitalize()}(\n",
+        return generatableClassMetadata.propertyMetadata.joinToString(
+                prefix = "${commentOnTop}data class ${generatableClassMetadata.className.capitalize()}(\n",
                 transform = { toKotlinProperty(it) },
                 separator = ",\n",
                 postfix = "\n)")
@@ -39,24 +39,24 @@ class MetadataReaderKotlin(private val schema: JsonSchemaMetadataOutput) : Langu
     //
 
     // TODO: Fix indent in some other way instead of hardcoding it
-    fun toKotlinProperty(property: GeneratableProperty): String {
+    fun toKotlinProperty(propertyMetadata: GeneratablePropertyMetadata): String {
         val strBuilder = StringBuilder()
-        if (!property.comment.isNullOrBlank()) {
-            strBuilder.append("        /** ${property.comment} */\n")
+        if (!propertyMetadata.comment.isNullOrBlank()) {
+            strBuilder.append("        /** ${propertyMetadata.comment} */\n")
         }
-        strBuilder.append("        val ${property.propertyName.decapitalize()}: ${dataTypeToKotlin(property)}${mbNullable(property.isNullable)}")
+        strBuilder.append("        val ${propertyMetadata.propertyName.decapitalize()}: ${dataTypeToKotlin(propertyMetadata)}${mbNullable(propertyMetadata.isNullable)}")
         return strBuilder.toString()
     }
 
-    fun dataTypeToKotlin(property: GeneratableProperty): String {
-        return when (property.propertyDataType) {
+    fun dataTypeToKotlin(propertyMetadata: GeneratablePropertyMetadata): String {
+        return when (propertyMetadata.propertyDataType) {
             DataTypes.date -> "LocalDate"
             DataTypes.datetime -> "LocalDateTime"
             DataTypes.double -> "Double"
             DataTypes.integer -> "Int"
             DataTypes.string -> "String"
-            DataTypes.obj -> property.objectTypeName!!   // always available for type = objects
-            DataTypes.array -> "" // TODO: what to do with arrays?
+            DataTypes.obj -> propertyMetadata.objectTypeName!!   // always available for type = objects
+            DataTypes.array -> "List<${propertyMetadata.objectTypeName}>"
         }
     }
 

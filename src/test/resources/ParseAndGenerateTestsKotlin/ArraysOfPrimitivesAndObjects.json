@@ -1,0 +1,33 @@
+{
+  "title": "Person",
+  "type": "object",
+  "description": "The best person",
+  "properties": {
+    "work": {
+      "type": "object",
+      "properties": {
+        "stuff": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "stuffArray": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "top": {
+                "type": "string"
+              },
+              "test": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "required": ["place"]
+    }
+  }
+}
