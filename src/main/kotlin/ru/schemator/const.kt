@@ -1,5 +1,6 @@
 package ru.schemator
 
+/** Json Schema keywords */
 object Schema {
     const val id = "\$id"
     const val schema = "\$schema"

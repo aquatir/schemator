@@ -1,6 +1,6 @@
 package ru.schemator
 
-import NotActionableSchemaException
+import SchemaValidationException
 import NotJsonSchemaException
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
@@ -212,7 +212,7 @@ class MetadataReader(val jsonSchema: String, val launchArguments: LaunchArgument
         } else {
             val asObject = properties.asJsonObject
             if (asObject.size() == 0) {
-                throw NotActionableSchemaException("On of 'properties' fields contains no elements -> can not generate anything")
+                throw SchemaValidationException("On of 'properties' fields contains no elements -> can not generate anything")
             } else {
                 return asObject
             }
