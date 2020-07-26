@@ -180,6 +180,8 @@ class MetadataReader(val jsonSchema: String, val launchArguments: LaunchArgument
                 SchemaTypes.array -> arrays.add(Pair(pair.first, pair.second.asJsonObject))
                 SchemaTypes.number,
                 SchemaTypes.string,
+                SchemaTypes.datetime,
+                SchemaTypes.date,
                 SchemaTypes.integer -> primitives.add(Pair(pair.first, pair.second.asJsonObject))
                 else -> throw NotJsonSchemaException("Type $type is not a valid Json Schema type")
             }

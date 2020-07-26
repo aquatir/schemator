@@ -21,15 +21,20 @@ object Schema {
 object SchemaTypes {
     const val integer = "integer"
     const val number = "number"
+    const val string = "string"
+    const val datetime = "datetime"
+    const val date = "date"
+
     const val obj = "object"
     const val array = "array"
-    const val string = "string"
 
     fun toMetadataType(str: String): DataTypes {
         return when(str) {
             integer -> DataTypes.integer
             number -> DataTypes.double
             string -> DataTypes.string
+            datetime -> DataTypes.datetime
+            date -> DataTypes.date
             obj -> DataTypes.obj
             array -> DataTypes.array
             else -> TODO()

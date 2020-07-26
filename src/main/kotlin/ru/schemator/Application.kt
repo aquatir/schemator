@@ -35,7 +35,7 @@ fun main(args: Array<String>) {
                       "type": "object",
                       "properties": {
                          "top": {
-                           "type": "string"
+                           "type": "datetime"
                          },
                          "test": {
                            "type": "integer"
