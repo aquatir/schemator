@@ -24,7 +24,6 @@ class ParseAndGenerateTestsKotlin {
         )).readSchema()
 
         val generated = MetadataReaderKotlin(jsonSchemaMetadataOutput).toClasses()
-
-        Assertions.assertEquals(expected.trim(), generated.trim())
+        Assertions.assertEquals(expected.trim(), generated.joinToString("\n") { it.trim() })
     }
 }

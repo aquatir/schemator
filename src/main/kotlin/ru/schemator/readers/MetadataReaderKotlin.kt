@@ -8,8 +8,8 @@ import java.lang.StringBuilder
 
 /** Read jsonSchema, parse and return kotlin code */
 class MetadataReaderKotlin(private val schema: JsonSchemaMetadataOutput) : LanguageSchemaReader(schema) {
-    override fun toClasses(): String {
-        return schema.entries.joinToString(separator = "\n") { toKotlinClass(it) }
+    override fun toClasses(): List<String> {
+        return schema.entries.map { toKotlinClass(it) }
     }
 
     //

@@ -32,7 +32,7 @@ class MetadataReaderKotlinTests {
         )
 
         val metadataReader = MetadataReaderKotlin(simpleMetadata)
-        val generatedResult = metadataReader.toClasses().trim()
+        val generatedResult = metadataReader.toClasses().joinToString("\n") { it.trim() }
         val expected = File(ClassLoader.getSystemResource("MetadataReaderKotlinTests/kotlinSimplePropertyTestData.kt").file).readText().trim()
 
         Assertions.assertEquals(expected, generatedResult)
@@ -56,7 +56,7 @@ class MetadataReaderKotlinTests {
         )
 
         val metadataReader = MetadataReaderKotlin(metaDataWithObjects)
-        val generatedResult = metadataReader.toClasses().trim()
+        val generatedResult = metadataReader.toClasses().joinToString("\n") { it.trim() }
         val expected = File(ClassLoader.getSystemResource("MetadataReaderKotlinTests/kotlinObjectPropertyTestData.kt").file).readText().trim()
 
         Assertions.assertEquals(expected, generatedResult)
