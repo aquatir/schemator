@@ -6,8 +6,8 @@ import ru.schemator.GeneratablePropertyMetadata
 import ru.schemator.JsonSchemaMetadataOutput
 import java.lang.StringBuilder
 
-/** Read jsonSchema, parse and return kotlin code */
-class MetadataReaderKotlin(private val schema: JsonSchemaMetadataOutput) : LanguageSchemaReader(schema) {
+/** Read metadata, parse and return kotlin code */
+class MetadataPrinterKotlin(private val schema: JsonSchemaMetadataOutput) : LanguageSchemaPrinter(schema) {
     override fun toClasses(): List<String> {
         return schema.entries.map { toKotlinClass(it) }
     }

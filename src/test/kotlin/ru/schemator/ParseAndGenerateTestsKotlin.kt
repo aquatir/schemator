@@ -2,7 +2,7 @@ package ru.schemator
 
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import ru.schemator.readers.MetadataReaderKotlin
+import ru.schemator.readers.MetadataPrinterKotlin
 import java.io.File
 
 /**
@@ -41,7 +41,7 @@ class ParseAndGenerateTestsKotlin {
                 output = ""
         )).readSchema()
 
-        val generated = MetadataReaderKotlin(jsonSchemaMetadataOutput).toClasses()
+        val generated = MetadataPrinterKotlin(jsonSchemaMetadataOutput).toClasses()
         Assertions.assertEquals(expected.trim(), generated.joinToString("\n") { it.trim() })
     }
 }

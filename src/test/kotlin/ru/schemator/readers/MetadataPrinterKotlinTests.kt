@@ -8,7 +8,7 @@ import ru.schemator.GeneratablePropertyMetadata
 import ru.schemator.JsonSchemaMetadataOutput
 import java.io.File
 
-class MetadataReaderKotlinTests {
+class MetadataPrinterKotlinTests {
 
     @Test
     fun `given primitives datatypes schema, do generate kotlin, expect generated correctly`() {
@@ -31,7 +31,7 @@ class MetadataReaderKotlinTests {
                 ))
         )
 
-        val metadataReader = MetadataReaderKotlin(simpleMetadata)
+        val metadataReader = MetadataPrinterKotlin(simpleMetadata)
         val generatedResult = metadataReader.toClasses().joinToString("\n") { it.trim() }
         val expected = File(ClassLoader.getSystemResource("MetadataReaderKotlinTests/kotlinSimplePropertyTestData.kt").file).readText().trim()
 
@@ -55,7 +55,7 @@ class MetadataReaderKotlinTests {
                 ))
         )
 
-        val metadataReader = MetadataReaderKotlin(metaDataWithObjects)
+        val metadataReader = MetadataPrinterKotlin(metaDataWithObjects)
         val generatedResult = metadataReader.toClasses().joinToString("\n") { it.trim() }
         val expected = File(ClassLoader.getSystemResource("MetadataReaderKotlinTests/kotlinObjectPropertyTestData.kt").file).readText().trim()
 

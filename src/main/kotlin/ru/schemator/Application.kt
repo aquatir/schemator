@@ -1,8 +1,8 @@
 package ru.schemator
 
 import TinyLogger
-import ru.schemator.readers.MetadataReaderGo
-import ru.schemator.readers.MetadataReaderKotlin
+import ru.schemator.readers.MetadataPrinterGo
+import ru.schemator.readers.MetadataPrinterKotlin
 
 
 fun main(args: Array<String>) {
@@ -55,8 +55,8 @@ fun main(args: Array<String>) {
     val jsonSchemaMetadataOutput = MetadataReader(schema, parsedArgs).readSchema()
 
     val generated = when (parsedArgs.language) {
-        Languages.kotlin -> MetadataReaderKotlin(jsonSchemaMetadataOutput).toClasses()
-        Languages.go -> MetadataReaderGo(jsonSchemaMetadataOutput).toClasses()
+        Languages.kotlin -> MetadataPrinterKotlin(jsonSchemaMetadataOutput).toClasses()
+        Languages.go -> MetadataPrinterGo(jsonSchemaMetadataOutput).toClasses()
     }
 
     println("\n==================\n===== result =====\n==================")
