@@ -29,15 +29,13 @@ object SchemaTypes {
     const val obj = "object"
     const val array = "array"
 
-    fun toMetadataType(str: String): DataTypes {
+    fun toMetadataType(str: String): PrimitiveDataTypes {
         return when(str) {
-            integer -> DataTypes.integer
-            number -> DataTypes.double
-            string -> DataTypes.string
-            datetime -> DataTypes.datetime
-            date -> DataTypes.date
-            obj -> DataTypes.obj
-            array -> DataTypes.array
+            integer -> PrimitiveDataTypes.integer
+            number -> PrimitiveDataTypes.double
+            string -> PrimitiveDataTypes.string
+            datetime -> PrimitiveDataTypes.datetime
+            date -> PrimitiveDataTypes.date
             else -> TODO()
         }
     }

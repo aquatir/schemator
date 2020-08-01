@@ -7,8 +7,8 @@ import com.google.gson.JsonParser
 import java.io.StringReader
 import java.util.*
 
-enum class DataTypes {
-    string, integer, double, obj, datetime, date, array
+enum class PrimitiveDataTypes {
+    string, integer, double, datetime, date
 }
 
 /** Can also generate  */
@@ -18,17 +18,33 @@ class GeneratableClassMetadata(
         val description: String? = null
 )
 
-// TODO: Split using sealed classes
-class GeneratablePropertyMetadata(
+
+sealed class GeneratablePropertyMetadata(
         val propertyName: String,
-        val propertyDataType: DataTypes,
         val isNullable: Boolean,
-        val objectTypeName: String? = null, // Only available for objects and arrays of objects. For objects -> Name of type. For Array -> type inside array
         val comment: String? = ""
-) {
-    fun isObj() = propertyDataType == DataTypes.obj
-    fun isArray() = propertyDataType == DataTypes.array
-}
+)
+
+class PrimitivePropertyMetadata(propertyName: String,
+                                isNullable: Boolean,
+                                comment: String? = "",
+                                val dataType: PrimitiveDataTypes) : GeneratablePropertyMetadata(propertyName, isNullable, comment)
+
+class ObjectPropertyMetadata(propertyName: String,
+                             isNullable: Boolean,
+                             comment: String? = "",
+                             val objectTypeName: String) : GeneratablePropertyMetadata(propertyName, isNullable, comment)
+
+class ArrayPropertyMetadata(propertyName: String,
+                            isNullable: Boolean,
+                            comment: String? = "",
+                            val genericParameter: GenericParameter): GeneratablePropertyMetadata(propertyName, isNullable, comment)
+
+class GenericParameter(
+        val className: String,
+        val genericParameter: GenericParameter? = null
+)
+
 
 // metadata is a list of generatable classes
 class JsonSchemaMetadataOutput(
@@ -110,13 +126,21 @@ class MetadataReader(val jsonSchema: String, val launchArguments: LaunchArgument
                         objs.add(NameAndObjectPair(it.first.capitalize(), it.second))
                     }
 
-                    GeneratablePropertyMetadata(
-                            propertyName = title,
-                            propertyDataType = SchemaTypes.toMetadataType(type),
-                            isNullable = !rootRequired.contains(it.first),
-                            comment = innerDescription,
-                            objectTypeName = if (type == SchemaTypes.obj) title.capitalize() else null
-                    )
+                    if (type == SchemaTypes.obj) {
+                        ObjectPropertyMetadata(
+                                propertyName = title,
+                                isNullable = !rootRequired.contains(it.first),
+                                comment = innerDescription,
+                                objectTypeName = title.capitalize()
+                        )
+                    } else {
+                        PrimitivePropertyMetadata(
+                                propertyName = title,
+                                dataType = SchemaTypes.toMetadataType(type),
+                                isNullable = !rootRequired.contains(it.first),
+                                comment = innerDescription
+                        )
+                    }
                 }
 
         // Array support :
@@ -128,7 +152,7 @@ class MetadataReader(val jsonSchema: String, val launchArguments: LaunchArgument
                     val value = it.second.asJsonObject
                     val innerDescription = value.descriptionNullable()
 
-                    val items = value.items() // TODO: Will fail for 'contains' for json schema 6
+                    val items = value.items() // TODO: Should also work  for 'contains' keyword for json schema 6
                     val typeOfItems = items.type()
 
                     // TODO: Support array inside array
@@ -143,12 +167,11 @@ class MetadataReader(val jsonSchema: String, val launchArguments: LaunchArgument
                                 innerObjectTitle
                             }
 
-                    GeneratablePropertyMetadata(
+                    ArrayPropertyMetadata(
                             propertyName = title,
-                            propertyDataType = DataTypes.array,
                             isNullable = !rootRequired.contains(it.first),
                             comment = innerDescription,
-                            objectTypeName = arrayTypeName
+                            genericParameter = GenericParameter(className = arrayTypeName)
                     )
                 }
 

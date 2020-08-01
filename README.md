@@ -20,7 +20,7 @@ Supported functionality:
 - metadata into classes:
     - validate schema before work
 - quality of codebase:
-    - metadata for properties should be sealed classes
+    - ???
 - parse program command line parameters on startup
 - logging, especial exceptional logging 
 - remember specific types while parsing metadata which require `import` headers for generated classes

@@ -1,9 +1,12 @@
 package ru.schemator.readers
 
-import ru.schemator.DataTypes
+import ru.schemator.ArrayPropertyMetadata
+import ru.schemator.PrimitiveDataTypes
 import ru.schemator.GeneratableClassMetadata
 import ru.schemator.GeneratablePropertyMetadata
 import ru.schemator.JsonSchemaMetadataOutput
+import ru.schemator.ObjectPropertyMetadata
+import ru.schemator.PrimitivePropertyMetadata
 import java.lang.StringBuilder
 
 /** Read metadata, parse and return kotlin code */
@@ -49,14 +52,16 @@ class MetadataPrinterKotlin(private val schema: JsonSchemaMetadataOutput) : Lang
     }
 
     fun dataTypeToKotlin(propertyMetadata: GeneratablePropertyMetadata): String {
-        return when (propertyMetadata.propertyDataType) {
-            DataTypes.date -> "LocalDate"
-            DataTypes.datetime -> "LocalDateTime"
-            DataTypes.double -> "Double"
-            DataTypes.integer -> "Int"
-            DataTypes.string -> "String"
-            DataTypes.obj -> propertyMetadata.objectTypeName!!   // always available for type = objects
-            DataTypes.array -> "List<${propertyMetadata.objectTypeName}>"
+        return when (propertyMetadata) {
+            is PrimitivePropertyMetadata -> when (propertyMetadata.dataType) {
+                PrimitiveDataTypes.date -> "LocalDate"
+                PrimitiveDataTypes.datetime -> "LocalDateTime"
+                PrimitiveDataTypes.double -> "Double"
+                PrimitiveDataTypes.integer -> "Int"
+                PrimitiveDataTypes.string -> "String"
+            }
+            is ObjectPropertyMetadata -> propertyMetadata.objectTypeName
+            is ArrayPropertyMetadata -> "List<${propertyMetadata.genericParameter.className}>" // TODO: Handle internal arrays
         }
     }
 
