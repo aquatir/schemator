@@ -52,7 +52,7 @@ class JsonSchemaMetadataOutput(
 )
 
 /** Create metedata by parsing json schema which can be used to generate code directly */
-class MetadataReader(val jsonSchema: String, val launchArguments: LaunchArguments) {
+class JsonSchemaReader(val jsonSchema: String, val launchArguments: LaunchArguments) {
     fun readSchema(): JsonSchemaMetadataOutput {
 
         // Read root object parameters
@@ -121,12 +121,9 @@ class MetadataReader(val jsonSchema: String, val launchArguments: LaunchArgument
                     val type = value.type()
                     val innerDescription = value.descriptionNullable()
 
-                    // Objects should be added into recursion
                     if (type == SchemaTypes.obj) {
+                        // Objects should be added into recursion
                         objs.add(NameAndObjectPair(it.first.capitalize(), it.second))
-                    }
-
-                    if (type == SchemaTypes.obj) {
                         ObjectPropertyMetadata(
                                 propertyName = title,
                                 isNullable = !rootRequired.contains(it.first),

@@ -35,7 +35,7 @@ class ParseAndGenerateTestsKotlin {
         val jsonSchema = File(ClassLoader.getSystemResource(readSchemaFrom).file).readText().trim()
         val expected = File(ClassLoader.getSystemResource(readExpectedClassFrom).file).readText().trim()
 
-        val jsonSchemaMetadataOutput = MetadataReader(jsonSchema, LaunchArguments(
+        val jsonSchemaMetadataOutput = JsonSchemaReader(jsonSchema, LaunchArguments(
                 language = Languages.kotlin,
                 input = "",
                 output = ""

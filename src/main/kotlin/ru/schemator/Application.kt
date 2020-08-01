@@ -52,7 +52,7 @@ fun main(args: Array<String>) {
 
     logger.debug("input schema:\n $schema")
 
-    val jsonSchemaMetadataOutput = MetadataReader(schema, parsedArgs).readSchema()
+    val jsonSchemaMetadataOutput = JsonSchemaReader(schema, parsedArgs).readSchema()
 
     val generated = when (parsedArgs.language) {
         Languages.kotlin -> MetadataPrinterKotlin(jsonSchemaMetadataOutput).toClasses()

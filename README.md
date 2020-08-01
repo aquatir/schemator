@@ -9,18 +9,21 @@ Supported languages: Limited Kotlin support.
 Supported functionality:
 - Schemas with primitives, objects and arrays. No array nesting. 
 
-#### TODOs:
+#### TODOs
 
-- schema into metadata parser:
-    - add `$ref` handling
-    - put arrays in the same place in generated classes as where they were in parsed schema
-    - support enums
-    - array type inside another array
-    - graceful exception handling for wrong schema names/types/etc
-- metadata into classes:
-    - validate schema before work
-- quality of codebase:
-    - ???
+##### Json Schema Reader
+ 
+- add `$ref` handling
+- put arrays in the same place in generated classes as where they were in parsed schema
+- support enums
+- array type inside another array
+- graceful exception handling for wrong schema names/types/etc
+- validate schema before processing
+
+##### Quality of codebase:
+- ??
+
+##### Other:
 - parse program command line parameters on startup
 - logging, especial exceptional logging 
 - remember specific types while parsing metadata which require `import` headers for generated classes
@@ -30,8 +33,7 @@ Supported functionality:
 - add javadocs everywhere
 - create contribution guide
 
-
-Long plans: 
+##### Long plans: 
 - generify to make adding other languages apart from kotlin much easier.
 - handle all json schema syntax. Generate appropriate json library annotations when possible and warn if not possible.
 
