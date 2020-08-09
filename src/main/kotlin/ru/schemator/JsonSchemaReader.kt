@@ -44,7 +44,7 @@ class ArrayPropertyMetadata(propertyName: String,
 sealed class ArrayGenericParameter {
     class Primitive(val primitiveName: PrimitiveDataTypes): ArrayGenericParameter()
     class Obj(val objectName: String): ArrayGenericParameter()
-    class Holder(val out: ArrayGenericParameter): ArrayGenericParameter()
+    class Array(val out: ArrayGenericParameter): ArrayGenericParameter()
 }
 
 
@@ -170,8 +170,42 @@ class JsonSchemaReader(val jsonSchema: String, val launchArguments: LaunchArgume
                                     objs.add(NameAndObjectPair(innerObjectTitle, items)) // Internal array objects should be added into recursion
                                     ArrayGenericParameter.Obj(objectName = innerObjectTitle)
                                 }
-                                else -> {
-                                    TODO()
+                                else -> { // handling internal array
+                                    var internalArrayCount = 1
+                                    var primitiveName: PrimitiveDataTypes? = null
+                                    var objectName: String? = null
+
+                                    var loopItems = items.items()
+                                    while (true) {
+                                        val internalItems = loopItems
+                                        val typeOfInternalItems = internalItems.type()
+                                        if (SchemaTypes.isPrimitive(typeOfInternalItems)) {
+                                            primitiveName = PrimitiveDataTypes.valueOf(typeOfInternalItems)
+                                            break
+                                        } else if (SchemaTypes.isObject(typeOfInternalItems)) {
+                                            val innerInternalObjectTitle = (internalItems.titleNullable() ?: "${title}Item").capitalize()
+                                            objs.add(NameAndObjectPair(innerInternalObjectTitle, internalItems)) // Internal array objects should be added into recursion
+                                            objectName = innerInternalObjectTitle
+                                            break
+                                        } else {
+                                            internalArrayCount++
+                                            loopItems = internalItems.items()
+                                        }
+                                    }
+                                    val isObject = objectName != null
+                                    when (internalArrayCount) { // TODO: Support any number of elements...
+                                        1 -> ArrayGenericParameter.Array(if (isObject) ArrayGenericParameter.Obj(objectName!!) else ArrayGenericParameter.Primitive(primitiveName!!))
+                                        2 -> ArrayGenericParameter.Array(
+                                                ArrayGenericParameter.Array(if (isObject) ArrayGenericParameter.Obj(objectName!!) else ArrayGenericParameter.Primitive(primitiveName!!))
+                                        )
+                                        3 -> ArrayGenericParameter.Array(
+                                                ArrayGenericParameter.Array (
+                                                        ArrayGenericParameter.Array(if (isObject) ArrayGenericParameter.Obj(objectName!!) else ArrayGenericParameter.Primitive(primitiveName!!))
+                                                )
+                                        )
+                                        else -> TODO()
+                                    }
+
                                 }
                             }
                     )

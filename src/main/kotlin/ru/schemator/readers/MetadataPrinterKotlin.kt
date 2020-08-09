@@ -61,8 +61,16 @@ class MetadataPrinterKotlin(private val schema: JsonSchemaMetadataOutput) : Lang
             is ArrayPropertyMetadata -> when (propertyMetadata.arrayGenericParameter) {
                 is ArrayGenericParameter.Primitive -> "List<${primitiveDataTypeToLanguage(propertyMetadata.arrayGenericParameter.primitiveName)}>"
                 is ArrayGenericParameter.Obj -> "List<${propertyMetadata.arrayGenericParameter.objectName}>"
-                is ArrayGenericParameter.Holder -> TODO()
+                is ArrayGenericParameter.Array -> printArrayMetadata(propertyMetadata.arrayGenericParameter, propertyMetadata)
             }
+        }
+    }
+
+    private fun printArrayMetadata(array: ArrayGenericParameter, propertyMetadata: GeneratablePropertyMetadata): String {
+        return when (array) {
+            is ArrayGenericParameter.Primitive -> "List<${primitiveDataTypeToLanguage(array.primitiveName)}>"
+            is ArrayGenericParameter.Obj -> "List<${array.objectName}>"
+            is ArrayGenericParameter.Array -> "List<${printArrayMetadata(array.out, propertyMetadata)}>"
         }
     }
 

@@ -29,6 +29,15 @@ class ParseAndGenerateTestsKotlin {
         )
     }
 
+    @Test
+    fun `given arrays of arrrays with internal object, do generate kotlin, expect generated correctly`() {
+
+        schemaReadAndValidateTest(
+                readSchemaFrom = "ParseAndGenerateTestsKotlin/ArraysOfArrays.json",
+                readExpectedClassFrom = "ParseAndGenerateTestsKotlin/ArraysOfArrays.kt"
+        )
+    }
+
 
     private fun schemaReadAndValidateTest(readSchemaFrom: String, readExpectedClassFrom: String) {
 
