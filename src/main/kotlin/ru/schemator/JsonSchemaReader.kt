@@ -47,6 +47,27 @@ sealed class ArrayGenericParameter {
     class Array(val out: ArrayGenericParameter): ArrayGenericParameter()
 }
 
+fun wrapArrayBase(iterations: Int, isObject: Boolean, primitiveName: PrimitiveDataTypes?, objName: String?): ArrayGenericParameter {
+    val root = if (isObject) ArrayGenericParameter.Obj(objName!!) else ArrayGenericParameter.Primitive(primitiveName!!)
+    return if (iterations == 0) {
+        root
+    } else {
+        wrapArray(iterations - 1, ArrayGenericParameter.Array(root))
+    }
+}
+
+fun wrapArray(iterations: Int, root: ArrayGenericParameter): ArrayGenericParameter {
+    return if (iterations == 0) {
+        return root
+    } else wrapArray(iterations - 1, ArrayGenericParameter.Array(root))
+}
+
+//3 -> ArrayGenericParameter.Array(
+//ArrayGenericParameter.Array (
+//ArrayGenericParameter.Array(if (isObject) ArrayGenericParameter.Obj(objectName!!) else ArrayGenericParameter.Primitive(primitiveName!!))
+//)
+//)
+
 
 
 // metadata is a list of generatable classes
@@ -160,6 +181,8 @@ class JsonSchemaReader(val jsonSchema: String, val launchArguments: LaunchArgume
     // Array support :
     // TODO: Support for 'contains' keyword (schema #6)
     // TODO: Support for arrays inside other arrays deeper than 5 levels
+    /** Return a list of generatable properties for arrays.
+     * Arrays are different from primitives and object because they can be nested inside one another */
     private fun handleArrays(primAndObj: List<Pair<String, JsonObject>>, objs: Queue<NameAndObjectPair>, required: List<String>): List<ArrayPropertyMetadata> {
         return primAndObj.map {
             val title = it.first
@@ -205,35 +228,7 @@ class JsonSchemaReader(val jsonSchema: String, val launchArguments: LaunchArgume
                                 }
                             }
                             val isObject = objectName != null
-                            when (internalArrayCount) { // TODO: Support any number of elements...
-                                1 -> ArrayGenericParameter.Array(if (isObject) ArrayGenericParameter.Obj(objectName!!) else ArrayGenericParameter.Primitive(primitiveName!!))
-                                2 -> ArrayGenericParameter.Array(
-                                        ArrayGenericParameter.Array(if (isObject) ArrayGenericParameter.Obj(objectName!!) else ArrayGenericParameter.Primitive(primitiveName!!))
-                                )
-                                3 -> ArrayGenericParameter.Array(
-                                        ArrayGenericParameter.Array (
-                                                ArrayGenericParameter.Array(if (isObject) ArrayGenericParameter.Obj(objectName!!) else ArrayGenericParameter.Primitive(primitiveName!!))
-                                        )
-                                )
-                                4 -> ArrayGenericParameter.Array(
-                                        ArrayGenericParameter.Array (
-                                                ArrayGenericParameter.Array (
-                                                        ArrayGenericParameter.Array(if (isObject) ArrayGenericParameter.Obj(objectName!!) else ArrayGenericParameter.Primitive(primitiveName!!))
-                                                )
-                                        )
-                                )
-                                5 -> ArrayGenericParameter.Array(
-                                        ArrayGenericParameter.Array (
-                                                ArrayGenericParameter.Array (
-                                                        ArrayGenericParameter.Array (
-                                                                ArrayGenericParameter.Array(if (isObject) ArrayGenericParameter.Obj(objectName!!) else ArrayGenericParameter.Primitive(primitiveName!!))
-                                                        )
-                                                )
-                                        )
-                                )
-                                else -> TODO()
-                            }
-
+                            wrapArrayBase(internalArrayCount, isObject, primitiveName, objectName)
                         }
                     }
             )
