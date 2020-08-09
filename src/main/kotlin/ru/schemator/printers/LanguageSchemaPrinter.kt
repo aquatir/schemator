@@ -1,7 +1,7 @@
-package ru.schemator.readers
+package ru.schemator.printers
 
-import ru.schemator.JsonSchemaMetadataOutput
-import ru.schemator.PrimitiveDataTypes
+import ru.schemator.reader.JsonSchemaMetadataOutput
+import ru.schemator.reader.PrimitiveDataTypes
 
 /** Generic class for schema readers. */
 abstract class LanguageSchemaPrinter(private val schema: JsonSchemaMetadataOutput) {

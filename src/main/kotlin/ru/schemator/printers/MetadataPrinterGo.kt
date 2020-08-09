@@ -1,7 +1,7 @@
-package ru.schemator.readers
+package ru.schemator.printers
 
-import ru.schemator.JsonSchemaMetadataOutput
-import ru.schemator.PrimitiveDataTypes
+import ru.schemator.reader.JsonSchemaMetadataOutput
+import ru.schemator.reader.PrimitiveDataTypes
 
 class MetadataPrinterGo(schema: JsonSchemaMetadataOutput): LanguageSchemaPrinter(schema) {
     override fun toClasses(): List<String> {

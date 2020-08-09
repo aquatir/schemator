@@ -1,13 +1,12 @@
-package ru.schemator.readers
+package ru.schemator.printers
 
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import ru.schemator.PrimitiveDataTypes
-import ru.schemator.GeneratableClassMetadata
-import ru.schemator.GeneratablePropertyMetadata
-import ru.schemator.JsonSchemaMetadataOutput
-import ru.schemator.ObjectPropertyMetadata
-import ru.schemator.PrimitivePropertyMetadata
+import ru.schemator.reader.PrimitiveDataTypes
+import ru.schemator.reader.GeneratableClassMetadata
+import ru.schemator.reader.JsonSchemaMetadataOutput
+import ru.schemator.reader.ObjectPropertyMetadata
+import ru.schemator.reader.PrimitivePropertyMetadata
 import java.io.File
 
 class MetadataPrinterKotlinTests {
@@ -21,10 +20,10 @@ class MetadataPrinterKotlinTests {
                         propertyMetadata = listOf(
                                 PrimitivePropertyMetadata("strNotNull", false, "", PrimitiveDataTypes.string),
                                 PrimitivePropertyMetadata("strNull", true, "", PrimitiveDataTypes.string),
-                                PrimitivePropertyMetadata("integerNotNull",  false, "", PrimitiveDataTypes.integer),
+                                PrimitivePropertyMetadata("integerNotNull", false, "", PrimitiveDataTypes.integer),
                                 PrimitivePropertyMetadata("integerNull", true, "", PrimitiveDataTypes.integer),
                                 PrimitivePropertyMetadata("doubleNotNull", false, "", PrimitiveDataTypes.double),
-                                PrimitivePropertyMetadata("doubleNull",  true, "", PrimitiveDataTypes.double),
+                                PrimitivePropertyMetadata("doubleNull", true, "", PrimitiveDataTypes.double),
                                 PrimitivePropertyMetadata("datetimeNotNull", false, "", PrimitiveDataTypes.datetime),
                                 PrimitivePropertyMetadata("datetimeNull", true, "", PrimitiveDataTypes.datetime),
                                 PrimitivePropertyMetadata("dateNotNull", false, "", PrimitiveDataTypes.date),
@@ -46,15 +45,15 @@ class MetadataPrinterKotlinTests {
                 listOf(GeneratableClassMetadata(
                         className = "Test",
                         propertyMetadata = listOf(
-                                ObjectPropertyMetadata("otherPros",   false, "", "OtherProps")
+                                ObjectPropertyMetadata("otherPros", false, "", "OtherProps")
                         )
                 ),
-                GeneratableClassMetadata(
-                        className = "OtherProps",
-                        propertyMetadata = listOf(
-                                PrimitivePropertyMetadata("simple", true, "", PrimitiveDataTypes.string)
-                        )
-                ))
+                        GeneratableClassMetadata(
+                                className = "OtherProps",
+                                propertyMetadata = listOf(
+                                        PrimitivePropertyMetadata("simple", true, "", PrimitiveDataTypes.string)
+                                )
+                        ))
         )
 
         val metadataReader = MetadataPrinterKotlin(metaDataWithObjects)

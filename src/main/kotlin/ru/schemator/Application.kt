@@ -1,8 +1,9 @@
 package ru.schemator
 
 import TinyLogger
-import ru.schemator.readers.MetadataPrinterGo
-import ru.schemator.readers.MetadataPrinterKotlin
+import ru.schemator.printers.MetadataPrinterGo
+import ru.schemator.printers.MetadataPrinterKotlin
+import ru.schemator.reader.JsonSchemaReader
 
 
 fun main(args: Array<String>) {

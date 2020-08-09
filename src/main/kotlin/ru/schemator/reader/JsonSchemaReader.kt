@@ -1,79 +1,20 @@
-package ru.schemator
+package ru.schemator.reader
 
 import SchemaValidationException
 import NotJsonSchemaException
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import ru.schemator.LaunchArguments
+import ru.schemator.SchemaTypes
+import ru.schemator.descriptionNullable
+import ru.schemator.items
+import ru.schemator.properties
+import ru.schemator.requiredNullable
+import ru.schemator.titleNullable
+import ru.schemator.type
 import java.io.StringReader
 import java.util.*
 
-enum class PrimitiveDataTypes {
-    string, integer, double, datetime, date
-}
-
-/** Can also generate  */
-class GeneratableClassMetadata(
-        val className: String,
-        val propertyMetadata: List<GeneratablePropertyMetadata>,
-        val description: String? = null
-)
-
-
-sealed class GeneratablePropertyMetadata(
-        val propertyName: String,
-        val isNullable: Boolean,
-        val comment: String? = ""
-)
-
-class PrimitivePropertyMetadata(propertyName: String,
-                                isNullable: Boolean,
-                                comment: String? = "",
-                                val dataType: PrimitiveDataTypes) : GeneratablePropertyMetadata(propertyName, isNullable, comment)
-
-class ObjectPropertyMetadata(propertyName: String,
-                             isNullable: Boolean,
-                             comment: String? = "",
-                             val objectTypeName: String) : GeneratablePropertyMetadata(propertyName, isNullable, comment)
-
-class ArrayPropertyMetadata(propertyName: String,
-                            isNullable: Boolean,
-                            comment: String? = "",
-                            val arrayGenericParameter: ArrayGenericParameter): GeneratablePropertyMetadata(propertyName, isNullable, comment)
-
-/** Either primitive or array-inside-array parameter */
-sealed class ArrayGenericParameter {
-    class Primitive(val primitiveName: PrimitiveDataTypes): ArrayGenericParameter()
-    class Obj(val objectName: String): ArrayGenericParameter()
-    class Array(val out: ArrayGenericParameter): ArrayGenericParameter()
-}
-
-fun wrapArrayBase(iterations: Int, isObject: Boolean, primitiveName: PrimitiveDataTypes?, objName: String?): ArrayGenericParameter {
-    val root = if (isObject) ArrayGenericParameter.Obj(objName!!) else ArrayGenericParameter.Primitive(primitiveName!!)
-    return if (iterations == 0) {
-        root
-    } else {
-        wrapArray(iterations - 1, ArrayGenericParameter.Array(root))
-    }
-}
-
-fun wrapArray(iterations: Int, root: ArrayGenericParameter): ArrayGenericParameter {
-    return if (iterations == 0) {
-        return root
-    } else wrapArray(iterations - 1, ArrayGenericParameter.Array(root))
-}
-
-//3 -> ArrayGenericParameter.Array(
-//ArrayGenericParameter.Array (
-//ArrayGenericParameter.Array(if (isObject) ArrayGenericParameter.Obj(objectName!!) else ArrayGenericParameter.Primitive(primitiveName!!))
-//)
-//)
-
-
-
-// metadata is a list of generatable classes
-class JsonSchemaMetadataOutput(
-        val entries: List<GeneratableClassMetadata>
-)
 
 /** Create metedata by parsing json schema which can be used to generate code directly */
 class JsonSchemaReader(val jsonSchema: String, val launchArguments: LaunchArguments) {
@@ -216,7 +157,8 @@ class JsonSchemaReader(val jsonSchema: String, val launchArguments: LaunchArgume
                                     primitiveName = PrimitiveDataTypes.valueOf(typeOfInternalItems)
                                     break
                                 } else if (SchemaTypes.isObject(typeOfInternalItems)) {
-                                    val innerInternalObjectTitle = (internalItems.titleNullable() ?: "${title}Item").capitalize()
+                                    val innerInternalObjectTitle = (internalItems.titleNullable()
+                                            ?: "${title}Item").capitalize()
                                     objs.add(NameAndObjectPair(innerInternalObjectTitle, internalItems)) // Internal array objects should be added into recursion
                                     objectName = innerInternalObjectTitle
                                     break

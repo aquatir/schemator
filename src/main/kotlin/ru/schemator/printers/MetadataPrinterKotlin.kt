@@ -1,13 +1,13 @@
-package ru.schemator.readers
+package ru.schemator.printers
 
-import ru.schemator.ArrayGenericParameter
-import ru.schemator.ArrayPropertyMetadata
-import ru.schemator.PrimitiveDataTypes
-import ru.schemator.GeneratableClassMetadata
-import ru.schemator.GeneratablePropertyMetadata
-import ru.schemator.JsonSchemaMetadataOutput
-import ru.schemator.ObjectPropertyMetadata
-import ru.schemator.PrimitivePropertyMetadata
+import ru.schemator.reader.ArrayGenericParameter
+import ru.schemator.reader.ArrayPropertyMetadata
+import ru.schemator.reader.PrimitiveDataTypes
+import ru.schemator.reader.GeneratableClassMetadata
+import ru.schemator.reader.GeneratablePropertyMetadata
+import ru.schemator.reader.JsonSchemaMetadataOutput
+import ru.schemator.reader.ObjectPropertyMetadata
+import ru.schemator.reader.PrimitivePropertyMetadata
 import java.lang.StringBuilder
 
 /** Read metadata, parse and return kotlin code */

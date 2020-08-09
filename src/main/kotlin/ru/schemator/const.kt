@@ -1,5 +1,7 @@
 package ru.schemator
 
+import ru.schemator.reader.PrimitiveDataTypes
+
 /** Json Schema keywords */
 object Schema {
     const val id = "\$id"

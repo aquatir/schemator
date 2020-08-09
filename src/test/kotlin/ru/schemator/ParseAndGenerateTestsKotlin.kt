@@ -2,7 +2,8 @@ package ru.schemator
 
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import ru.schemator.readers.MetadataPrinterKotlin
+import ru.schemator.printers.MetadataPrinterKotlin
+import ru.schemator.reader.JsonSchemaReader
 import java.io.File
 
 /**
