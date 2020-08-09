@@ -180,7 +180,6 @@ class JsonSchemaReader(val jsonSchema: String, val launchArguments: LaunchArgume
 
     // Array support :
     // TODO: Support for 'contains' keyword (schema #6)
-    // TODO: Support for arrays inside other arrays deeper than 5 levels
     /** Return a list of generatable properties for arrays.
      * Arrays are different from primitives and object because they can be nested inside one another */
     private fun handleArrays(primAndObj: List<Pair<String, JsonObject>>, objs: Queue<NameAndObjectPair>, required: List<String>): List<ArrayPropertyMetadata> {
@@ -205,11 +204,10 @@ class JsonSchemaReader(val jsonSchema: String, val launchArguments: LaunchArgume
                             objs.add(NameAndObjectPair(innerObjectTitle, items)) // Internal array objects should be added into recursion
                             ArrayGenericParameter.Obj(objectName = innerObjectTitle)
                         }
-                        else -> { // handling internal array TODO: Support array inside array deeper than 5
+                        else -> { // handling internal array
                             var internalArrayCount = 1
                             var primitiveName: PrimitiveDataTypes? = null
                             var objectName: String? = null
-
                             var loopItems = items.items()
                             while (true) {
                                 val internalItems = loopItems
