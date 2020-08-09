@@ -1,5 +1,6 @@
 package ru.schemator.readers
 
+import ru.schemator.ArrayGenericParameter
 import ru.schemator.ArrayPropertyMetadata
 import ru.schemator.PrimitiveDataTypes
 import ru.schemator.GeneratableClassMetadata
@@ -61,7 +62,12 @@ class MetadataPrinterKotlin(private val schema: JsonSchemaMetadataOutput) : Lang
                 PrimitiveDataTypes.string -> "String"
             }
             is ObjectPropertyMetadata -> propertyMetadata.objectTypeName
-            is ArrayPropertyMetadata -> "List<${propertyMetadata.genericParameter.className}>" // TODO: Handle internal arrays
+
+            // TODO: Handle internal arrays
+            is ArrayPropertyMetadata -> when (propertyMetadata.arrayGenericParameter) {
+                is ArrayGenericParameter.Primitive -> "List<${propertyMetadata.arrayGenericParameter.primitiveName}>"
+                is ArrayGenericParameter.Holder -> TODO()
+            }
         }
     }
 

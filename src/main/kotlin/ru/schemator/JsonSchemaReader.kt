@@ -38,12 +38,14 @@ class ObjectPropertyMetadata(propertyName: String,
 class ArrayPropertyMetadata(propertyName: String,
                             isNullable: Boolean,
                             comment: String? = "",
-                            val genericParameter: GenericParameter): GeneratablePropertyMetadata(propertyName, isNullable, comment)
+                            val arrayGenericParameter: ArrayGenericParameter): GeneratablePropertyMetadata(propertyName, isNullable, comment)
 
-class GenericParameter(
-        val className: String,
-        val genericParameter: GenericParameter? = null
-)
+/** Either primitive or array-inside-array parameter */
+sealed class ArrayGenericParameter() {
+    class Primitive(val primitiveName: String): ArrayGenericParameter()
+    class Holder(val out: ArrayGenericParameter): ArrayGenericParameter()
+}
+
 
 
 // metadata is a list of generatable classes
@@ -168,7 +170,7 @@ class JsonSchemaReader(val jsonSchema: String, val launchArguments: LaunchArgume
                             propertyName = title,
                             isNullable = !rootRequired.contains(it.first),
                             comment = innerDescription,
-                            genericParameter = GenericParameter(className = arrayTypeName)
+                            arrayGenericParameter = ArrayGenericParameter.Primitive(primitiveName = arrayTypeName)
                     )
                 }
 
