@@ -31,11 +31,20 @@ class ParseAndGenerateTestsKotlin {
     }
 
     @Test
-    fun `given arrays of arrrays with internal object, do generate kotlin, expect generated correctly`() {
+    fun `given arrays of arrrays x3 with internal object, do generate kotlin, expect generated correctly`() {
 
         schemaReadAndValidateTest(
-                readSchemaFrom = "ParseAndGenerateTestsKotlin/ArraysOfArrays.json",
-                readExpectedClassFrom = "ParseAndGenerateTestsKotlin/ArraysOfArrays.kt"
+                readSchemaFrom = "ParseAndGenerateTestsKotlin/ArraysOfArraysX3.json",
+                readExpectedClassFrom = "ParseAndGenerateTestsKotlin/ArraysOfArraysX3.kt"
+        )
+    }
+
+    @Test
+    fun `given arrays of arrrays x10 with internal primitive, do generate kotlin, expect generated correctly`() {
+
+        schemaReadAndValidateTest(
+                readSchemaFrom = "ParseAndGenerateTestsKotlin/ArraysOfArraysX10.json",
+                readExpectedClassFrom = "ParseAndGenerateTestsKotlin/ArraysOfArraysX10.kt"
         )
     }
 
