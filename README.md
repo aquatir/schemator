@@ -16,7 +16,7 @@ Supported functionality:
 - add `$ref` handling
 - put arrays in the same place in generated classes as where they were in parsed schema
 - support enums
-- array type inside another array
+- handle any number of intenral array (currently handle up to 5 internal arrays)
 - graceful exception handling for wrong schema names/types/etc
 - validate schema before processing
 

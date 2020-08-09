@@ -117,107 +117,127 @@ class JsonSchemaReader(val jsonSchema: String, val launchArguments: LaunchArgume
         val rootRequired = getRequired(obj)
 
         val (primitives, arrays, objects) = splitObjectTypesByHandling(obj)
-        val props = (primitives + objects)
-                .map {
-                    val title = it.first
-                    val value = it.second.asJsonObject
-                    val type = value.type()
-                    val innerDescription = value.descriptionNullable()
 
-                    if (type == SchemaTypes.obj) {
-                        // Objects should be added into recursion
-                        objs.add(NameAndObjectPair(it.first.capitalize(), it.second))
-                        ObjectPropertyMetadata(
-                                propertyName = title,
-                                isNullable = !rootRequired.contains(it.first),
-                                comment = innerDescription,
-                                objectTypeName = title.capitalize()
-                        )
-                    } else {
-                        PrimitivePropertyMetadata(
-                                propertyName = title,
-                                dataType = SchemaTypes.toMetadataType(type),
-                                isNullable = !rootRequired.contains(it.first),
-                                comment = innerDescription
-                        )
-                    }
-                }
-
-        // Array support :
-        // TODO: Support for 'contains' keyword (schema #6)
-        // TODO: Support for arrays inside other arrays
-        val arrayProps = arrays
-                .map {
-                    val title = it.first
-                    val value = it.second.asJsonObject
-                    val innerDescription = value.descriptionNullable()
-
-                    val items = value.items() // TODO: Should also work  for 'contains' keyword for json schema 6
-                    val typeOfItems = items.type()
-
-                    // TODO: Support array inside array
-
-                    ArrayPropertyMetadata(
-                            propertyName = title,
-                            isNullable = !rootRequired.contains(it.first),
-                            comment = innerDescription,
-                            arrayGenericParameter = when {
-                                SchemaTypes.isPrimitive(typeOfItems) -> {
-                                    ArrayGenericParameter.Primitive(primitiveName = PrimitiveDataTypes.valueOf(typeOfItems))
-                                }
-                                SchemaTypes.isObject(typeOfItems) -> {
-                                    val innerObjectTitle = (items.titleNullable() ?: "${title}Item").capitalize()
-                                    objs.add(NameAndObjectPair(innerObjectTitle, items)) // Internal array objects should be added into recursion
-                                    ArrayGenericParameter.Obj(objectName = innerObjectTitle)
-                                }
-                                else -> { // handling internal array
-                                    var internalArrayCount = 1
-                                    var primitiveName: PrimitiveDataTypes? = null
-                                    var objectName: String? = null
-
-                                    var loopItems = items.items()
-                                    while (true) {
-                                        val internalItems = loopItems
-                                        val typeOfInternalItems = internalItems.type()
-                                        if (SchemaTypes.isPrimitive(typeOfInternalItems)) {
-                                            primitiveName = PrimitiveDataTypes.valueOf(typeOfInternalItems)
-                                            break
-                                        } else if (SchemaTypes.isObject(typeOfInternalItems)) {
-                                            val innerInternalObjectTitle = (internalItems.titleNullable() ?: "${title}Item").capitalize()
-                                            objs.add(NameAndObjectPair(innerInternalObjectTitle, internalItems)) // Internal array objects should be added into recursion
-                                            objectName = innerInternalObjectTitle
-                                            break
-                                        } else {
-                                            internalArrayCount++
-                                            loopItems = internalItems.items()
-                                        }
-                                    }
-                                    val isObject = objectName != null
-                                    when (internalArrayCount) { // TODO: Support any number of elements...
-                                        1 -> ArrayGenericParameter.Array(if (isObject) ArrayGenericParameter.Obj(objectName!!) else ArrayGenericParameter.Primitive(primitiveName!!))
-                                        2 -> ArrayGenericParameter.Array(
-                                                ArrayGenericParameter.Array(if (isObject) ArrayGenericParameter.Obj(objectName!!) else ArrayGenericParameter.Primitive(primitiveName!!))
-                                        )
-                                        3 -> ArrayGenericParameter.Array(
-                                                ArrayGenericParameter.Array (
-                                                        ArrayGenericParameter.Array(if (isObject) ArrayGenericParameter.Obj(objectName!!) else ArrayGenericParameter.Primitive(primitiveName!!))
-                                                )
-                                        )
-                                        else -> TODO()
-                                    }
-
-                                }
-                            }
-                    )
-                }
+        val primsAndObjects = handlePrimitiveAndObject((primitives + objects), objs, rootRequired)
+        val arrayProps = handleArrays(arrays, objs, rootRequired)
 
         // A head of this recursion is generated here
 
         return GeneratableClassMetadata(
                 className = rootName,
                 description = rootDescription,
-                propertyMetadata = props + arrayProps
+                propertyMetadata = primsAndObjects + arrayProps
         )
+    }
+
+    private fun handlePrimitiveAndObject(primAndObj: List<Pair<String, JsonObject>>, objs: Queue<NameAndObjectPair>, required: List<String>): List<GeneratablePropertyMetadata> {
+        return primAndObj.map {
+            val title = it.first
+            val value = it.second.asJsonObject
+            val type = value.type()
+            val innerDescription = value.descriptionNullable()
+
+            if (type == SchemaTypes.obj) {
+                // Objects should be added into recursion
+                objs.add(NameAndObjectPair(it.first.capitalize(), it.second))
+                ObjectPropertyMetadata(
+                        propertyName = title,
+                        isNullable = !required.contains(it.first),
+                        comment = innerDescription,
+                        objectTypeName = title.capitalize()
+                )
+            } else {
+                PrimitivePropertyMetadata(
+                        propertyName = title,
+                        dataType = SchemaTypes.toMetadataType(type),
+                        isNullable = !required.contains(it.first),
+                        comment = innerDescription
+                )
+            }
+        }
+    }
+
+    // Array support :
+    // TODO: Support for 'contains' keyword (schema #6)
+    // TODO: Support for arrays inside other arrays deeper than 5 levels
+    private fun handleArrays(primAndObj: List<Pair<String, JsonObject>>, objs: Queue<NameAndObjectPair>, required: List<String>): List<ArrayPropertyMetadata> {
+        return primAndObj.map {
+            val title = it.first
+            val value = it.second.asJsonObject
+            val innerDescription = value.descriptionNullable()
+
+            val items = value.items() // TODO: Should also work  for 'contains' keyword for json schema 6
+            val typeOfItems = items.type()
+
+            ArrayPropertyMetadata(
+                    propertyName = title,
+                    isNullable = !required.contains(it.first),
+                    comment = innerDescription,
+                    arrayGenericParameter = when {
+                        SchemaTypes.isPrimitive(typeOfItems) -> {
+                            ArrayGenericParameter.Primitive(primitiveName = PrimitiveDataTypes.valueOf(typeOfItems))
+                        }
+                        SchemaTypes.isObject(typeOfItems) -> {
+                            val innerObjectTitle = (items.titleNullable() ?: "${title}Item").capitalize()
+                            objs.add(NameAndObjectPair(innerObjectTitle, items)) // Internal array objects should be added into recursion
+                            ArrayGenericParameter.Obj(objectName = innerObjectTitle)
+                        }
+                        else -> { // handling internal array TODO: Support array inside array deeper than 5
+                            var internalArrayCount = 1
+                            var primitiveName: PrimitiveDataTypes? = null
+                            var objectName: String? = null
+
+                            var loopItems = items.items()
+                            while (true) {
+                                val internalItems = loopItems
+                                val typeOfInternalItems = internalItems.type()
+                                if (SchemaTypes.isPrimitive(typeOfInternalItems)) {
+                                    primitiveName = PrimitiveDataTypes.valueOf(typeOfInternalItems)
+                                    break
+                                } else if (SchemaTypes.isObject(typeOfInternalItems)) {
+                                    val innerInternalObjectTitle = (internalItems.titleNullable() ?: "${title}Item").capitalize()
+                                    objs.add(NameAndObjectPair(innerInternalObjectTitle, internalItems)) // Internal array objects should be added into recursion
+                                    objectName = innerInternalObjectTitle
+                                    break
+                                } else {
+                                    internalArrayCount++
+                                    loopItems = internalItems.items()
+                                }
+                            }
+                            val isObject = objectName != null
+                            when (internalArrayCount) { // TODO: Support any number of elements...
+                                1 -> ArrayGenericParameter.Array(if (isObject) ArrayGenericParameter.Obj(objectName!!) else ArrayGenericParameter.Primitive(primitiveName!!))
+                                2 -> ArrayGenericParameter.Array(
+                                        ArrayGenericParameter.Array(if (isObject) ArrayGenericParameter.Obj(objectName!!) else ArrayGenericParameter.Primitive(primitiveName!!))
+                                )
+                                3 -> ArrayGenericParameter.Array(
+                                        ArrayGenericParameter.Array (
+                                                ArrayGenericParameter.Array(if (isObject) ArrayGenericParameter.Obj(objectName!!) else ArrayGenericParameter.Primitive(primitiveName!!))
+                                        )
+                                )
+                                4 -> ArrayGenericParameter.Array(
+                                        ArrayGenericParameter.Array (
+                                                ArrayGenericParameter.Array (
+                                                        ArrayGenericParameter.Array(if (isObject) ArrayGenericParameter.Obj(objectName!!) else ArrayGenericParameter.Primitive(primitiveName!!))
+                                                )
+                                        )
+                                )
+                                5 -> ArrayGenericParameter.Array(
+                                        ArrayGenericParameter.Array (
+                                                ArrayGenericParameter.Array (
+                                                        ArrayGenericParameter.Array (
+                                                                ArrayGenericParameter.Array(if (isObject) ArrayGenericParameter.Obj(objectName!!) else ArrayGenericParameter.Primitive(primitiveName!!))
+                                                        )
+                                                )
+                                        )
+                                )
+                                else -> TODO()
+                            }
+
+                        }
+                    }
+            )
+        }
     }
 
 
