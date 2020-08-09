@@ -78,28 +78,24 @@ class JsonSchemaReader(val jsonSchema: String, val launchArguments: LaunchArgume
         val rootDescription: String? = obj.descriptionNullable()
         val rootRequired = getRequired(obj)
 
-        val (primitives, arrays, objects) = splitObjectTypesByHandling(obj)
-
-        val primsAndObjects = handlePrimitiveAndObject((primitives + objects), objs, rootRequired)
-        val arrayProps = handleArrays(arrays, objs, rootRequired)
-
-        // A head of this recursion is generated here
+        val objects = objectToListOfPairs(obj)
+        val generatabableObjects = handleObjects(objects, objs, rootRequired)
 
         return GeneratableClassMetadata(
                 className = rootName,
                 description = rootDescription,
-                propertyMetadata = primsAndObjects + arrayProps
+                propertyMetadata = generatabableObjects
         )
     }
 
-    private fun handlePrimitiveAndObject(primAndObj: List<Pair<String, JsonObject>>, objs: Queue<NameAndObjectPair>, required: List<String>): List<GeneratablePropertyMetadata> {
+    private fun handleObjects(primAndObj: List<Pair<String, JsonObject>>, objs: Queue<NameAndObjectPair>, required: List<String>): List<GeneratablePropertyMetadata> {
         return primAndObj.map {
             val title = it.first
             val value = it.second.asJsonObject
             val type = value.type()
             val innerDescription = value.descriptionNullable()
 
-            if (type == SchemaTypes.obj) {
+            if (SchemaTypes.isObject(type)) {
                 // Objects should be added into recursion
                 objs.add(NameAndObjectPair(it.first.capitalize(), it.second))
                 ObjectPropertyMetadata(
@@ -108,100 +104,71 @@ class JsonSchemaReader(val jsonSchema: String, val launchArguments: LaunchArgume
                         comment = innerDescription,
                         objectTypeName = title.capitalize()
                 )
-            } else {
+            } else if (SchemaTypes.isPrimitive(type)) {
                 PrimitivePropertyMetadata(
                         propertyName = title,
                         dataType = SchemaTypes.toMetadataType(type),
                         isNullable = !required.contains(it.first),
                         comment = innerDescription
                 )
-            }
-        }
-    }
+            } else {
+                val items = value.items() // TODO: Should also work  for 'contains' keyword for json schema 6
+                val typeOfItems = items.type()
 
-    // Array support :
-    // TODO: Support for 'contains' keyword (schema #6)
-    /** Return a list of generatable properties for arrays.
-     * Arrays are different from primitives and object because they can be nested inside one another */
-    private fun handleArrays(primAndObj: List<Pair<String, JsonObject>>, objs: Queue<NameAndObjectPair>, required: List<String>): List<ArrayPropertyMetadata> {
-        return primAndObj.map {
-            val title = it.first
-            val value = it.second.asJsonObject
-            val innerDescription = value.descriptionNullable()
-
-            val items = value.items() // TODO: Should also work  for 'contains' keyword for json schema 6
-            val typeOfItems = items.type()
-
-            ArrayPropertyMetadata(
-                    propertyName = title,
-                    isNullable = !required.contains(it.first),
-                    comment = innerDescription,
-                    arrayGenericParameter = when {
-                        SchemaTypes.isPrimitive(typeOfItems) -> {
-                            ArrayGenericParameter.Primitive(primitiveName = PrimitiveDataTypes.valueOf(typeOfItems))
-                        }
-                        SchemaTypes.isObject(typeOfItems) -> {
-                            val innerObjectTitle = (items.titleNullable() ?: "${title}Item").capitalize()
-                            objs.add(NameAndObjectPair(innerObjectTitle, items)) // Internal array objects should be added into recursion
-                            ArrayGenericParameter.Obj(objectName = innerObjectTitle)
-                        }
-                        else -> { // handling internal array
-                            var internalArrayCount = 1
-                            var primitiveName: PrimitiveDataTypes? = null
-                            var objectName: String? = null
-                            var loopItems = items.items()
-                            while (true) {
-                                val internalItems = loopItems
-                                val typeOfInternalItems = internalItems.type()
-                                if (SchemaTypes.isPrimitive(typeOfInternalItems)) {
-                                    primitiveName = PrimitiveDataTypes.valueOf(typeOfInternalItems)
-                                    break
-                                } else if (SchemaTypes.isObject(typeOfInternalItems)) {
-                                    val innerInternalObjectTitle = (internalItems.titleNullable()
-                                            ?: "${title}Item").capitalize()
-                                    objs.add(NameAndObjectPair(innerInternalObjectTitle, internalItems)) // Internal array objects should be added into recursion
-                                    objectName = innerInternalObjectTitle
-                                    break
-                                } else {
-                                    internalArrayCount++
-                                    loopItems = internalItems.items()
-                                }
+                ArrayPropertyMetadata(
+                        propertyName = title,
+                        isNullable = !required.contains(it.first),
+                        comment = innerDescription,
+                        arrayGenericParameter = when {
+                            SchemaTypes.isPrimitive(typeOfItems) -> {
+                                ArrayGenericParameter.Primitive(primitiveName = PrimitiveDataTypes.valueOf(typeOfItems))
                             }
-                            val isObject = objectName != null
-                            wrapArrayBase(internalArrayCount, isObject, primitiveName, objectName)
+                            SchemaTypes.isObject(typeOfItems) -> {
+                                val innerObjectTitle = (items.titleNullable() ?: "${title}Item").capitalize()
+                                objs.add(NameAndObjectPair(innerObjectTitle, items)) // Internal array objects should be added into recursion
+                                ArrayGenericParameter.Obj(objectName = innerObjectTitle)
+                            }
+                            else -> { // handling internal array
+                                var internalArrayCount = 1
+                                var primitiveName: PrimitiveDataTypes? = null
+                                var objectName: String? = null
+                                var loopItems = items.items()
+                                while (true) {
+                                    val internalItems = loopItems
+                                    val typeOfInternalItems = internalItems.type()
+                                    if (SchemaTypes.isPrimitive(typeOfInternalItems)) {
+                                        primitiveName = PrimitiveDataTypes.valueOf(typeOfInternalItems)
+                                        break
+                                    } else if (SchemaTypes.isObject(typeOfInternalItems)) {
+                                        val innerInternalObjectTitle = (internalItems.titleNullable()
+                                                ?: "${title}Item").capitalize()
+                                        objs.add(NameAndObjectPair(innerInternalObjectTitle, internalItems)) // Internal array objects should be added into recursion
+                                        objectName = innerInternalObjectTitle
+                                        break
+                                    } else {
+                                        internalArrayCount++
+                                        loopItems = internalItems.items()
+                                    }
+                                }
+                                val isObject = objectName != null
+                                wrapArrayBase(internalArrayCount, isObject, primitiveName, objectName)
+                            }
                         }
-                    }
-            )
+                )
+            }
         }
     }
 
 
-    private fun splitObjectTypesByHandling(obj: JsonObject): Triple<
-            List<Pair<String, JsonObject>>,
-            List<Pair<String, JsonObject>>,
-            List<Pair<String, JsonObject>>
-            > {
+    /** Get all root properties of object as list of pairs.
+     * Used to split them by type: see git log if required*/
+    private fun objectToListOfPairs(obj: JsonObject):
+            List<Pair<String, JsonObject>> {
 
-        val primitives = mutableListOf<Pair<String, JsonObject>>()
-        val arrays = mutableListOf<Pair<String, JsonObject>>()
-        val objects = mutableListOf<Pair<String, JsonObject>>()
-
-        for (entry in getPropertiesFromObject(obj).entrySet()) {
-            val type = entry.value.asJsonObject.type()
-            val pair = entry.toPair()
-            when (type) {
-                SchemaTypes.obj -> objects.add(Pair(pair.first, pair.second.asJsonObject))
-                SchemaTypes.array -> arrays.add(Pair(pair.first, pair.second.asJsonObject))
-                SchemaTypes.number,
-                SchemaTypes.string,
-                SchemaTypes.datetime,
-                SchemaTypes.date,
-                SchemaTypes.integer -> primitives.add(Pair(pair.first, pair.second.asJsonObject))
-                else -> throw NotJsonSchemaException("Type $type is not a valid Json Schema type")
-            }
+        return getPropertiesFromObject(obj).entrySet().map {
+            val pair = it.toPair()
+            Pair(pair.first, pair.second.asJsonObject)
         }
-
-        return Triple(primitives, arrays, objects)
     }
 
     private fun getRequired(obj: JsonObject): List<String> {
