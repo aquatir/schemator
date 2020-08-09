@@ -41,8 +41,9 @@ class ArrayPropertyMetadata(propertyName: String,
                             val arrayGenericParameter: ArrayGenericParameter): GeneratablePropertyMetadata(propertyName, isNullable, comment)
 
 /** Either primitive or array-inside-array parameter */
-sealed class ArrayGenericParameter() {
-    class Primitive(val primitiveName: String): ArrayGenericParameter()
+sealed class ArrayGenericParameter {
+    class Primitive(val primitiveName: PrimitiveDataTypes): ArrayGenericParameter()
+    class Obj(val objectName: String): ArrayGenericParameter()
     class Holder(val out: ArrayGenericParameter): ArrayGenericParameter()
 }
 
@@ -155,22 +156,24 @@ class JsonSchemaReader(val jsonSchema: String, val launchArguments: LaunchArgume
                     val typeOfItems = items.type()
 
                     // TODO: Support array inside array
-                    val arrayTypeName =
-                            if (SchemaTypes.isPrimitive(typeOfItems)) {
-                                typeOfItems.capitalize()
-                            } else {
-                                val innerObjectTitle = (items.titleNullable() ?: "${title}Item").capitalize()
-
-                                // Internal array objects should be added into recursion
-                                objs.add(NameAndObjectPair(innerObjectTitle, items))
-                                innerObjectTitle
-                            }
 
                     ArrayPropertyMetadata(
                             propertyName = title,
                             isNullable = !rootRequired.contains(it.first),
                             comment = innerDescription,
-                            arrayGenericParameter = ArrayGenericParameter.Primitive(primitiveName = arrayTypeName)
+                            arrayGenericParameter = when {
+                                SchemaTypes.isPrimitive(typeOfItems) -> {
+                                    ArrayGenericParameter.Primitive(primitiveName = PrimitiveDataTypes.valueOf(typeOfItems))
+                                }
+                                SchemaTypes.isObject(typeOfItems) -> {
+                                    val innerObjectTitle = (items.titleNullable() ?: "${title}Item").capitalize()
+                                    objs.add(NameAndObjectPair(innerObjectTitle, items)) // Internal array objects should be added into recursion
+                                    ArrayGenericParameter.Obj(objectName = innerObjectTitle)
+                                }
+                                else -> {
+                                    TODO()
+                                }
+                            }
                     )
                 }
 

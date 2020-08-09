@@ -54,25 +54,30 @@ class MetadataPrinterKotlin(private val schema: JsonSchemaMetadataOutput) : Lang
 
     fun dataTypeToKotlin(propertyMetadata: GeneratablePropertyMetadata): String {
         return when (propertyMetadata) {
-            is PrimitivePropertyMetadata -> when (propertyMetadata.dataType) {
-                PrimitiveDataTypes.date -> "LocalDate"
-                PrimitiveDataTypes.datetime -> "LocalDateTime"
-                PrimitiveDataTypes.double -> "Double"
-                PrimitiveDataTypes.integer -> "Int"
-                PrimitiveDataTypes.string -> "String"
-            }
+            is PrimitivePropertyMetadata -> primitiveDataTypeToLanguage(propertyMetadata.dataType)
             is ObjectPropertyMetadata -> propertyMetadata.objectTypeName
 
             // TODO: Handle internal arrays
             is ArrayPropertyMetadata -> when (propertyMetadata.arrayGenericParameter) {
-                is ArrayGenericParameter.Primitive -> "List<${propertyMetadata.arrayGenericParameter.primitiveName}>"
+                is ArrayGenericParameter.Primitive -> "List<${primitiveDataTypeToLanguage(propertyMetadata.arrayGenericParameter.primitiveName)}>"
+                is ArrayGenericParameter.Obj -> "List<${propertyMetadata.arrayGenericParameter.objectName}>"
                 is ArrayGenericParameter.Holder -> TODO()
             }
         }
     }
 
-    fun mbNullable(nullable: Boolean): String {
+    override fun mbNullable(nullable: Boolean): String {
         return if (nullable) "?" else ""
+    }
+
+    override fun primitiveDataTypeToLanguage(dataType: PrimitiveDataTypes): String {
+        return when (dataType) {
+            PrimitiveDataTypes.date -> "LocalDate"
+            PrimitiveDataTypes.datetime -> "LocalDateTime"
+            PrimitiveDataTypes.double -> "Double"
+            PrimitiveDataTypes.integer -> "Int"
+            PrimitiveDataTypes.string -> "String"
+        }
     }
 
 

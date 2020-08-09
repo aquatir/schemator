@@ -45,4 +45,8 @@ object SchemaTypes {
             type == integer
                     || type == number
                     || type == string
+
+    fun isObject(type: String) = type == obj
+
+    fun isArray(type: String) = type == array
 }
