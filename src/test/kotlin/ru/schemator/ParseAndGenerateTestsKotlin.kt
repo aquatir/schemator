@@ -34,8 +34,8 @@ class ParseAndGenerateTestsKotlin {
     fun `given arrays of array x3 with internal object, do generate kotlin, expect generated correctly`() {
 
         schemaReadAndValidateTest(
-                readSchemaFrom = "ParseAndGenerateTestsKotlin/ArraysOfArraysX3WithObject.json",
-                readExpectedClassFrom = "ParseAndGenerateTestsKotlin/ArraysOfArraysX3WithObject.kt"
+                readSchemaFrom = "ParseAndGenerateTestsKotlin/ArraysOfArraysX3WithObjectWithTitle.json",
+                readExpectedClassFrom = "ParseAndGenerateTestsKotlin/ArraysOfArraysX3WithObjectWithTitle.kt"
         )
     }
 
