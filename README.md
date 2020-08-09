@@ -20,7 +20,8 @@ Supported functionality:
 - validate schema before processing
 
 ##### Quality of codebase:
-- ??
+- array handling looks wacky... refactor?
+- 
 
 ##### Other:
 - parse program command line parameters on startup

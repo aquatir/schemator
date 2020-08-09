@@ -1,0 +1,24 @@
+{
+  "title": "Person",
+  "type": "object",
+  "description": "The best person",
+  "properties": {
+    "work": {
+      "type": "object",
+      "properties": {
+        "arrayOfArrays": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "prop": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "required": ["arrayOfArrays"]
+    }
+  }
+}
